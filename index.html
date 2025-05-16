@@ -1902,19 +1902,46 @@
             endGameAfterVideo();
           });
         }
+        
+        // Add a safety timeout to ensure the video doesn't get stuck
+        // This will trigger if the onended event doesn't fire properly
+        setTimeout(() => {
+          if (videoPlaying) {
+            console.log("Video safety timeout triggered - force ending video");
+            endGameAfterVideo();
+          }
+        }, 30000); // 30 second safety timeout
       }, 1000);
       
       // When video ends, show game over screen
       video.onended = function() {
+        console.log("Video ended, showing game over screen");
         endGameAfterVideo();
       };
+      
+      // Add touch event listener to close video on mobile tap
+      video.addEventListener('click', function() {
+        if (videoPlaying) {
+          console.log("Video tapped, skipping to end");
+          endGameAfterVideo();
+        }
+      });
     }
     
     // Function to end the game after video
     function endGameAfterVideo() {
+      // Prevent multiple calls
+      if (!videoPlaying) return;
+      
+      console.log("Ending game after video");
+      
       // Hide the video
       const video = document.getElementById('endingVideo');
+      video.pause(); // Ensure video stops playing
+      video.currentTime = 0; // Reset video position
       video.style.display = 'none';
+      
+      // Update flags
       videoPlaying = false;
       hasCompletedFinalBackground = true;  // Ensure we don't trigger the video again
       videoHasPlayed = true; // Set the permanent flag that video has played
