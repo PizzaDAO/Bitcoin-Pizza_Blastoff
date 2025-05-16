@@ -389,7 +389,7 @@
   </div>
   <div id="start-screen">
     <div id="start-screen-content">
-      <img id="pizzadao-logo" src="Assets/Visual/pizzaDAO-Logo.png" alt="pizzaDAO Logo">
+      <img id="pizzadao-logo" src="Assets/Visual/pizzaDao-Logo.png" alt="pizzaDAO Logo">
       <h1>Bitcoin Pizza Blastoff</h1>
       <p>
         Collect
@@ -505,6 +505,33 @@
     let playerTextureGlow3 = createFallbackTexture('red'); // All eyes glowing
     let playerTextureBonusActive = null; // Will use glow3 if not loaded
     
+    // Determine if we're on a mobile device with portrait orientation
+    function isMobilePortrait() {
+      return window.innerWidth < window.innerHeight && window.innerWidth < 768;
+    }
+    
+    // Adjust player size and position based on device
+    function getPlayerSize() {
+      if (isMobilePortrait()) {
+        // Mobile portrait: 30% smaller (70% of original size)
+        return 105; // 150 * 0.7 = 105
+      } else {
+        // Desktop or landscape: original size
+        return 150;
+      }
+    }
+    
+    // Get horizontal position for player
+    function getPlayerXPosition() {
+      if (isMobilePortrait()) {
+        // Mobile portrait: closer to left edge
+        return 50; // Moved from 100 to 50
+      } else {
+        // Desktop or landscape: original position
+        return 100;
+      }
+    }
+    
     // Load all player textures
     loadTextureWithFallback('Assets/Visual/Rocket Pizza.png', 'red', texture => {
       console.log("Base rocket texture loaded successfully");
@@ -537,7 +564,9 @@
     
     // Create a container for the player so we can rotate it properly
     const playerContainer = new THREE.Object3D();
-    playerContainer.position.set(100, 0, 0);
+    const playerSize = getPlayerSize();
+    const playerXPosition = getPlayerXPosition();
+    playerContainer.position.set(playerXPosition, 0, 0);
     scene.add(playerContainer);
     
     // Create the player sprite inside the container
@@ -546,9 +575,9 @@
       transparent: true
     });
     const player = new THREE.Sprite(playerMaterial);
-    player.scale.set(150, 150, 1);
-    player.width = 150;
-    player.height = 150;
+    player.scale.set(playerSize, playerSize, 1);
+    player.width = playerSize;
+    player.height = playerSize;
     // Add sprite to container instead of directly to scene
     playerContainer.add(player);
     
@@ -593,7 +622,8 @@
       respawnMsg.style.display = 'block';
       
       // Reset player position and velocity
-      playerContainer.position.set(100, 0, 0); // Reset container, not sprite
+      const playerXPosition = getPlayerXPosition();
+      playerContainer.position.set(playerXPosition, 0, 0); // Use responsive position
       playerVelocity = 0;
       
       // Clear any active enemies near the respawn point for safety
@@ -2446,6 +2476,9 @@
       
       // Reset game state
       resetGameState();
+      
+      // Reset background positions to ensure we start from the beginning
+      resetBackgroundPositions();
     }
     
     // Reset game state without starting animation
@@ -2458,7 +2491,8 @@
       updateRetryDisplay();
       laserCount = 0;
       laserBonusActive = false;
-      playerContainer.position.set(100, 0, 0); // Reset container, not sprite
+      const playerXPosition = getPlayerXPosition();
+      playerContainer.position.set(playerXPosition, 0, 0); // Use responsive position
       playerVelocity = 0;
       gameStartTime = 0;
       backgroundSpeed = 0.5; // Slow for start screen
@@ -2496,7 +2530,8 @@
       resetGameState();
       
       // Reset player position
-      playerContainer.position.set(100, 0, 0);
+      const playerXPosition = getPlayerXPosition();
+      playerContainer.position.set(playerXPosition, 0, 0); // Use responsive position
       playerVelocity = flapStrength; // Give an initial upward boost
       
       // Reset background positions to ensure proper scroll restart
@@ -3217,6 +3252,36 @@
         playEndingVideo();
       }, 2000);
     }
+
+    // Resize handler for responsive gameplay
+    window.addEventListener('resize', function() {
+      // Update camera
+      camera.left = window.innerWidth / -2;
+      camera.right = window.innerWidth / 2;
+      camera.top = window.innerHeight / 2;
+      camera.bottom = window.innerHeight / -2;
+      camera.updateProjectionMatrix();
+      
+      // Update renderer size
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      
+      // Update background dimensions
+      const newBackgroundWidth = window.innerWidth;
+      const newBackgroundHeight = window.innerHeight;
+      
+      // Update player size and position for responsive design
+      const playerSize = getPlayerSize();
+      player.scale.set(playerSize, playerSize, 1);
+      player.width = playerSize;
+      player.height = playerSize;
+      
+      // Update player position
+      const playerXPosition = getPlayerXPosition();
+      if (!gameActive) {
+        // Only update X position if game is not active
+        playerContainer.position.x = playerXPosition;
+      }
+    });
   </script>
 
   <!-- Add Supabase JS Client -->
