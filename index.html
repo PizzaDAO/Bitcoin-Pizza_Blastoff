@@ -1918,14 +1918,6 @@
         console.log("Video ended, showing game over screen");
         endGameAfterVideo();
       };
-      
-      // Add touch event listener to close video on mobile tap
-      video.addEventListener('click', function() {
-        if (videoPlaying) {
-          console.log("Video tapped, skipping to end");
-          endGameAfterVideo();
-        }
-      });
     }
     
     // Function to end the game after video
