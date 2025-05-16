@@ -463,7 +463,9 @@
     // Game variables
     let playerVelocity = 0;
     const gravity = 0.7;
-    const flapStrength = 14;
+    const desktopFlapStrength = 14;
+    const mobileFlapStrength = 9; // Reduced flap strength for mobile devices
+    let flapStrength = desktopFlapStrength; // Default to desktop value, will be updated based on device
     let retryCount = 0; // Changed from pizzaCount to retryCount
     let laserCount = 0;
     let score = 0;
@@ -523,13 +525,8 @@
     
     // Get horizontal position for player
     function getPlayerXPosition() {
-      if (isMobilePortrait()) {
-        // Mobile portrait: closer to left edge
-        return 20; // Moved from 50 to 20 - even closer to left margin
-      } else {
-        // Desktop or landscape: original position
-        return 100;
-      }
+      // Use the same left-side positioning for all devices
+      return -80; // Consistent left positioning for all devices
     }
     
     // Load all player textures
@@ -1118,8 +1115,24 @@
     ];
     
     const backgrounds = [];
-    const backgroundWidth = window.innerWidth;
-    const backgroundHeight = window.innerHeight;
+    let backgroundWidth = window.innerWidth;
+    let backgroundHeight = window.innerHeight;
+    
+    // Function to calculate background dimensions with proper aspect ratio
+    function calculateBackgroundDimensions() {
+      // For vertical mobile screens, maintain a minimum width to avoid compression
+      if (isMobilePortrait()) {
+        // Use a fixed aspect ratio for backgrounds (16:9 or 4:3 are common)
+        const minWidth = window.innerHeight * 1.77; // 16:9 aspect ratio
+        backgroundWidth = Math.max(window.innerWidth, minWidth);
+      } else {
+        backgroundWidth = window.innerWidth;
+      }
+      backgroundHeight = window.innerHeight;
+    }
+    
+    // Calculate initial dimensions
+    calculateBackgroundDimensions();
     
     // Track which background is currently visible in center screen
     let currentBackgroundIndex = 0; 
@@ -2847,6 +2860,9 @@
       // Create a fallback texture
       const fallbackTexture = createFallbackTexture('skyblue');
       
+      // Calculate proper background dimensions first
+      calculateBackgroundDimensions();
+      
       // First, create the initial background positioned at the center of the screen
       const firstBgMaterial = new THREE.SpriteMaterial({
         map: fallbackTexture,
@@ -3271,9 +3287,8 @@
       // Update renderer size
       renderer.setSize(window.innerWidth, window.innerHeight);
       
-      // Update background dimensions
-      const newBackgroundWidth = window.innerWidth;
-      const newBackgroundHeight = window.innerHeight;
+      // Update background dimensions with proper aspect ratio
+      updateBackgroundAspectRatio();
       
       // Update player size and position for responsive design
       const playerSize = getPlayerSize();
@@ -3287,7 +3302,33 @@
         // Only update X position if game is not active
         playerContainer.position.x = playerXPosition;
       }
+
+      // Update game controls for different devices
+      updateGameControls();
     });
+
+    // Update the flap strength based on device
+    function updateGameControls() {
+      // Set flap strength based on device
+      if (isMobilePortrait()) {
+        flapStrength = mobileFlapStrength;
+      } else {
+        flapStrength = desktopFlapStrength;
+      }
+    }
+
+    // Call this when game initializes
+    updateGameControls();
+
+    // Function to ensure backgrounds maintain proper aspect ratio
+    function updateBackgroundAspectRatio() {
+      calculateBackgroundDimensions();
+      
+      // Update all background sprites with new dimensions
+      for (let i = 0; i < backgrounds.length; i++) {
+        backgrounds[i].scale.set(backgroundWidth, backgroundHeight, 1);
+      }
+    }
   </script>
 
   <!-- Add Supabase JS Client -->
