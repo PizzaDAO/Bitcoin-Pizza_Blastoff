@@ -525,7 +525,7 @@
     function getPlayerXPosition() {
       if (isMobilePortrait()) {
         // Mobile portrait: closer to left edge
-        return 50; // Moved from 100 to 50
+        return 20; // Moved from 50 to 20 - even closer to left margin
       } else {
         // Desktop or landscape: original position
         return 100;
@@ -2479,6 +2479,9 @@
       
       // Reset background positions to ensure we start from the beginning
       resetBackgroundPositions();
+      
+      // Also force the background to stop scrolling completely
+      backgroundSpeed = 0;
     }
     
     // Reset game state without starting animation
@@ -2557,6 +2560,9 @@
     // Function to reset background positions
     function resetBackgroundPositions() {
       console.log("Resetting background positions...");
+      
+      // Force background scrolling to stop
+      backgroundSpeed = 0;
       
       // Ensure backgrounds are properly spaced
       for (let i = 0; i < backgrounds.length; i++) {
