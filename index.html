@@ -1,0 +1,3629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bitcoin Pizza Blastoff</title>
+  <style>
+    body { margin: 0; overflow: hidden; background-color: black; }
+    #ui {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      color: white;
+      font-family: Arial, sans-serif;
+      z-index: 100;
+    }
+    #game-over {
+      position: absolute;
+      top: 45%; /* Move slightly higher on screen from 50% to 45% */
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: white;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      display: none;
+      z-index: 100;
+      width: 80%;
+      padding: 20px 15px;
+      background-color: rgba(0, 0, 0, 0.8);
+      border-radius: 10px;
+    }
+    #instructions {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: white;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      z-index: 100;
+    }
+    #start-screen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.85);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      font-family: 'Arial', sans-serif;
+      z-index: 200;
+    }
+    
+    #start-screen::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle at center, rgba(247, 147, 26, 0.2) 0%, rgba(0, 0, 0, 0) 70%);
+      z-index: -1;
+    }
+    
+    #start-screen-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 85%;
+      max-width: 600px;
+      animation: fadeIn 0.8s ease-out;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    #pizzadao-logo {
+      max-width: 53.2%;
+      margin-bottom: 20px;
+      height: auto;
+      filter: drop-shadow(0 0 8px rgba(247, 147, 26, 0.5));
+    }
+    
+    #start-screen h1 {
+      font-size: 2.8em;
+      margin-bottom: 20px;
+      color: #f7931a;
+      text-shadow: 0 0 10px rgba(247, 147, 26, 0.5);
+      letter-spacing: 1px;
+      font-weight: bold;
+    }
+    
+    #start-screen p {
+      font-size: 1.3em;
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 5px;
+      background-color: rgba(0, 0, 0, 0.5);
+      padding: 8px 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+      width: 90%;
+      max-width: 450px;
+    }
+    
+    .instruction-img {
+      height: 40px;
+      width: auto;
+      vertical-align: middle;
+      image-rendering: pixelated;
+      margin: 0 5px;
+      filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.5));
+    }
+    
+    #start-button {
+      margin-top: 25px;
+      padding: 12px 35px;
+      font-size: 1.5em;
+      background: linear-gradient(to bottom, #f7931a, #e67e22);
+      color: white;
+      border: none;
+      border-radius: 30px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 15px rgba(247, 147, 26, 0.4);
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+    
+    #start-button:hover {
+      background: linear-gradient(to bottom, #f9a638, #f7931a);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(247, 147, 26, 0.6);
+    }
+    
+    #start-button:active {
+      transform: translateY(1px);
+      box-shadow: 0 2px 10px rgba(247, 147, 26, 0.4);
+    }
+    
+    /* Pulsating effect for button */
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+    
+    #start-button {
+      animation: pulse 2s infinite;
+    }
+    
+    #start-button:hover {
+      animation: none;
+    }
+    
+    /* Game credits */
+    #game-credits {
+      position: absolute;
+      bottom: 10px;
+      width: 100%;
+      text-align: center;
+      font-size: 0.8em;
+      color: rgba(255, 255, 255, 0.6);
+      padding: 5px;
+    }
+    
+    #retry-icons {
+      display: flex;
+      align-items: center;
+    }
+    .pizza-icon {
+      width: 20px;
+      height: 20px;
+      margin-right: 5px;
+      image-rendering: pixelated;
+    }
+    #respawn-message {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: white;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      display: none;
+      z-index: 150;
+      background-color: rgba(0, 0, 0, 0.7);
+      padding: 20px;
+      border-radius: 10px;
+    }
+    /* Audio unlock button style */
+    #audio-unlock {
+      position: fixed;
+      top: 70px;
+      right: 10px;
+      background-color: rgba(0,0,0,0.7);
+      color: white;
+      border: 1px solid white;
+      padding: 8px 12px;
+      cursor: pointer;
+      z-index: 300;
+      font-family: Arial, sans-serif;
+    }
+    /* Test button style */
+    #audio-test {
+      display: none; /* Hide the test button */
+    }
+    /* Audio indicator style */
+    #audio-indicator {
+      display: none; /* Hide the audio indicator */
+    }
+    /* Toast notification for audio feedback */
+    #audio-toast {
+      position: fixed;
+      bottom: 50px;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: rgba(0, 0, 0, 0.7);
+      color: white;
+      padding: 10px 20px;
+      border-radius: 5px;
+      z-index: 1000;
+      font-family: Arial, sans-serif;
+      display: none;
+    }
+    
+    #game-over img {
+      max-width: 30%; /* Further reduced from 40% to 30% */
+      margin-bottom: 5px;
+    }
+    
+    #game-over p {
+      margin: 5px 0; /* Reduced margin */
+    }
+    
+    #leaderboard {
+      margin: 8px auto; /* Reduced from 10px to 8px */
+      width: 80%;
+      color: white;
+      text-align: center;
+    }
+    
+    #leaderboard h2 {
+      font-size: 1.2em; /* Reduced from 1.3em to 1.2em */
+      margin-bottom: 3px; /* Reduced from 5px to 3px */
+    }
+    
+    #leaderboard-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    
+    #leaderboard-list li {
+      display: grid;
+      grid-template-columns: 30px 1fr 80px;
+      justify-content: space-between;
+      text-align: left;
+      padding: 2px 8px; /* Reduced from 3px 10px to 2px 8px */
+      background-color: rgba(255, 255, 255, 0.1);
+      margin-bottom: 2px; /* Reduced from 3px to 2px */
+      border-radius: 3px;
+    }
+    
+    #leaderboard-list .highlight {
+      background-color: rgba(247, 147, 26, 0.5); /* Bitcoin orange with transparency */
+      font-weight: bold;
+    }
+    
+    #leaderboard-list .name {
+      text-align: left;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    
+    #leaderboard-list .score {
+      text-align: right;
+    }
+    
+    #game-over button {
+      margin: 8px 5px; /* Reduced from 10px to 8px */
+      padding: 6px 12px; /* Slightly reduced from 8px 15px */
+      font-size: 0.9em; /* Reduced from 1em to 0.9em */
+      background-color: #f7931a; /* Bitcoin orange */
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    
+    #game-over button:hover {
+      background-color: #e67e22; /* Darker orange on hover */
+    }
+    
+    #player-name-form {
+      margin: 8px 0; /* Reduced from 10px to 8px */
+    }
+    
+    #player-name-input {
+      padding: 6px 10px;
+      border: 2px solid #f7931a;
+      border-radius: 4px;
+      background-color: rgba(0, 0, 0, 0.7);
+      color: white;
+      width: 150px;
+      margin-right: 5px;
+      font-size: 14px;
+    }
+    
+    #save-score-btn {
+      padding: 6px 10px;
+      background-color: #f7931a;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    
+    #save-score-btn:hover {
+      background-color: #e67e22;
+    }
+  </style>
+  
+  <!-- Simple audio element with no sources -->
+  <audio id="gameAudio" preload="auto" style="display:none;"></audio>
+  
+  <!-- Add visual audio indicator - hidden now -->
+  <div id="audio-indicator" style="display:none;"></div>
+</head>
+<body>
+  <div id="ui">
+    <div id="score">Score: 0</div>
+    <div id="retry-container">
+      <span>Lives: </span>
+      <div id="retry-icons"></div>
+  </div>
+    <div id="laser-count">Laser Eyes: 0/3</div>
+  </div>
+  
+  <div id="game-over">
+    <img src="Assets/Visual/Game Over.png" alt="Game Over">
+    <p>Score: <span id="final-score">0</span></p>
+    
+    <div id="player-name-form">
+      <input type="text" id="player-name-input" placeholder="Your name" maxlength="15">
+      <button id="save-score-btn">Save Score</button>
+  </div>
+    
+    <div id="leaderboard">
+      <h2>Highest Scores</h2>
+      <ul id="leaderboard-list">
+        <!-- Leaderboard entries will be added here dynamically -->
+      </ul>
+    </div>
+    
+    <button id="retry-button" onclick="restartGame()">Play Again</button>
+    <button id="main-menu-button" onclick="showStartScreen()">Main Menu</button>
+    
+    <!-- Add creator credit with hyperlink -->
+    <div style="margin-top: 15px; display: flex; justify-content: center; gap: 30px;">
+      <a href="https://linktr.ee/c_r_x_s_s" target="_blank" style="display: inline-block;">
+        <img src="Assets/Visual/created by CRXSS.png" alt="Created by CRXSS" style="max-width: 75px; height: auto;">
+      </a>
+      <a href="https://x.com/infi1trate?s=21" target="_blank" style="display: inline-block;">
+        <img src="Assets/Visual/created by infi1trate.png" alt="Created by infi1trate" style="max-width: 75px; height: auto;">
+      </a>
+    </div>
+  </div>
+  <div id="respawn-message">
+    <h2>You crashed!</h2>
+    <p>Using 1 retry...</p>
+    <p>Respawning in <span id="respawn-countdown">3</span></p>
+  </div>
+  <div id="instructions">
+    Click, tap or press SPACE to fly up!
+  </div>
+  <div id="start-screen">
+    <div id="start-screen-content">
+      <img id="pizzadao-logo" src="Assets/Visual/pizzaDAO-Logo.png" alt="pizzaDAO Logo">
+      <h1>Bitcoin Pizza Blastoff</h1>
+      <p>
+        Collect
+        <img src="Assets/Visual/pizza slice.png" alt="Pizza" class="instruction-img">
+        for more lives
+      </p>
+      <p>
+        Collect
+        <img src="Assets/Visual/bitcoin.png" alt="Bitcoin" class="instruction-img">
+        for laser eyes to blast enemies!
+      </p>
+      <button id="start-button">Start Game</button>
+      
+      <!-- Add creator credit with hyperlink -->
+      <div style="margin-top: 100px; margin-bottom: 20px; display: flex; justify-content: center; gap: 30px;">
+        <a href="https://linktr.ee/c_r_x_s_s" target="_blank" style="display: inline-block;">
+          <img src="Assets/Visual/created by CRXSS.png" alt="Created by CRXSS" style="max-width: 90px; height: auto;">
+        </a>
+        <a href="https://x.com/infi1trate?s=21" target="_blank" style="display: inline-block;">
+          <img src="Assets/Visual/created by infi1trate.png" alt="Created by infi1trate" style="max-width: 90px; height: auto;">
+        </a>
+      </div>
+    </div>
+    
+    <div id="game-credits">Bitcoin Pizza Blastoff • v1.0</div>
+  </div>
+
+  <!-- Remove test button -->
+  <!-- <button id="audio-test">Test Audio</button> -->
+
+  <div id="audio-toast">Molto Bene!</div>
+
+  <!-- Add video element for ending video -->
+  <video id="endingVideo" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 300; object-fit: contain; background-color: black;" src="Assets/Visual/To the Moon.mp4"></video>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script>
+    // Scene setup
+    const scene = new THREE.Scene();
+    const camera = new THREE.OrthographicCamera(
+      window.innerWidth / -2,
+      window.innerWidth / 2,
+      window.innerHeight / 2,
+      window.innerHeight / -2,
+      0.1,
+      1000
+    );
+    camera.position.z = 10;
+
+    const renderer = new THREE.WebGLRenderer();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    // Game state
+    let gameActive = false;
+    let animationFrameId = null;
+    let audioInitialized = false; // Track if audio has been initialized
+    let videoHasPlayed = false; // Permanent flag to track if video has been played in this session
+
+    // Create colored fallback textures
+    function createFallbackTexture(color) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 64;
+      canvas.height = 64;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = color;
+      ctx.fillRect(0, 0, 64, 64);
+      return new THREE.CanvasTexture(canvas);
+    }
+
+    // Game variables
+    let playerVelocity = 0;
+    const gravity = 0.7;
+    const flapStrength = 14;
+    let retryCount = 0; // Changed from pizzaCount to retryCount
+    let laserCount = 0;
+    let score = 0;
+    let gameOver = false;
+    let isRespawning = false;
+    let laserBonusActive = false;
+    let gameStartTime = 0;
+    let backgroundSpeed = 2;
+    let respawnCountdown = 0;
+
+    // Full Power mode variables
+    let fullPowerMode = false;
+    let fullPowerTimer = 0;
+    let fullPowerDuration = 3000; // 3 seconds in milliseconds
+    let lastLaserFireTime = 0;
+    let laserFireInterval = 200; // Fire lasers every 200ms during full power
+
+    // Texture loader with fallback
+    const textureLoader = new THREE.TextureLoader();
+    function loadTextureWithFallback(path, fallbackColor, callback) {
+      const fallback = createFallbackTexture(fallbackColor);
+      textureLoader.load(
+        path,
+        texture => {
+          // Fix aspect ratio issues by setting these properties
+          texture.matrixAutoUpdate = true;
+          callback(texture);
+        },
+        undefined,
+        () => callback(fallback)
+      );
+      return fallback; // Return fallback immediately for initial use
+    }
+
+    // Player setup
+    let playerTexture = createFallbackTexture('red');
+    let playerTextureGlow1 = createFallbackTexture('red'); // Left eye glow
+    let playerTextureGlow2 = createFallbackTexture('red'); // Left + middle eye glow
+    let playerTextureGlow3 = createFallbackTexture('red'); // All eyes glowing
+    let playerTextureBonusActive = null; // Will use glow3 if not loaded
+    
+    // Load all player textures
+    loadTextureWithFallback('Assets/Visual/Rocket Pizza.png', 'red', texture => {
+      console.log("Base rocket texture loaded successfully");
+      playerTexture = texture;
+      if (!playerTextureLoaded) {
+        player.material.map = texture;
+        player.material.needsUpdate = true;
+        playerTextureLoaded = true;
+      }
+    });
+    
+    loadTextureWithFallback('Assets/Visual/Rocket Pizza_eye glow 1.png', 'red', texture => {
+      console.log("Rocket glow 1 texture loaded successfully");
+      playerTextureGlow1 = texture;
+    });
+    
+    loadTextureWithFallback('Assets/Visual/Rocket Pizza_eye glow 2.png', 'red', texture => {
+      console.log("Rocket glow 2 texture loaded successfully");
+      playerTextureGlow2 = texture;
+    });
+    
+    loadTextureWithFallback('Assets/Visual/Rocket Pizza_eye glow 3.png', 'red', texture => {
+      console.log("Rocket glow 3 texture loaded successfully");
+      playerTextureGlow3 = texture;
+      playerTextureBonusActive = texture; // Use glow3 for bonus mode if no specific bonus texture
+    });
+    
+    // Flag to track if the default texture has been loaded and applied
+    let playerTextureLoaded = false;
+    
+    // Create a container for the player so we can rotate it properly
+    const playerContainer = new THREE.Object3D();
+    playerContainer.position.set(100, 0, 0);
+    scene.add(playerContainer);
+    
+    // Create the player sprite inside the container
+    const playerMaterial = new THREE.SpriteMaterial({ 
+      map: playerTexture,
+      transparent: true
+    });
+    const player = new THREE.Sprite(playerMaterial);
+    player.scale.set(150, 150, 1);
+    player.width = 150;
+    player.height = 150;
+    // Add sprite to container instead of directly to scene
+    playerContainer.add(player);
+    
+    // Apply rotation to the container (5 degrees clockwise)
+    playerContainer.rotation.z = -5 * (Math.PI / 180);
+    
+    // Create a pizza icon for retries
+    function createPizzaIcon() {
+      const icon = document.createElement('img');
+      icon.src = 'Assets/Visual/pizza slice.png'; // Use the same pizza image
+      icon.className = 'pizza-icon';
+      return icon;
+    }
+    
+    // Update the retry display with pizza icons
+    function updateRetryDisplay() {
+      const container = document.getElementById('retry-icons');
+      // Clear existing icons
+      container.innerHTML = '';
+      
+      // Add an icon for each retry
+      for (let i = 0; i < retryCount; i++) {
+        container.appendChild(createPizzaIcon());
+      }
+    }
+
+    // Respawn the player after using a retry
+    function respawnPlayer() {
+      console.log("Respawning player, retries remaining:", retryCount - 1);
+      isRespawning = true;
+      retryCount--; // Use one retry
+      updateRetryDisplay();
+      
+      // Stop animation frame during respawn to prevent further collisions
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+        animationFrameId = null;
+      }
+      
+      // Show respawn message
+      const respawnMsg = document.getElementById('respawn-message');
+      respawnMsg.style.display = 'block';
+      
+      // Reset player position and velocity
+      playerContainer.position.set(100, 0, 0); // Reset container, not sprite
+      playerVelocity = 0;
+      
+      // Clear any active enemies near the respawn point for safety
+      const safeZone = 300; // Safe zone width
+      for (let i = enemies.length - 1; i >= 0; i--) {
+        if (enemies[i].position.x < playerContainer.position.x + safeZone) {
+          scene.remove(enemies[i]);
+          enemies.splice(i, 1);
+        }
+      }
+      
+      for (let i = obstacles.length - 1; i >= 0; i--) {
+        if (obstacles[i].position.x < playerContainer.position.x + safeZone) {
+          scene.remove(obstacles[i]);
+          obstacles.splice(i, 1);
+        }
+      }
+      
+      // Start countdown
+      respawnCountdown = 3;
+      document.getElementById('respawn-countdown').textContent = respawnCountdown;
+      
+      // Start countdown timer
+      const countdownInterval = setInterval(() => {
+        respawnCountdown--;
+        document.getElementById('respawn-countdown').textContent = respawnCountdown;
+        
+        if (respawnCountdown <= 0) {
+          clearInterval(countdownInterval);
+          // Hide respawn message
+          respawnMsg.style.display = 'none';
+          
+          // Give player a grace period by resetting gameStartTime
+          gameStartTime = 0;
+          
+          // Resume game
+          isRespawning = false;
+          
+          // Give an initial boost to prevent immediate falling
+          playerVelocity = flapStrength;
+          
+          // Make sure animation is running - this is crucial!
+          if (!animationFrameId) {
+            console.log("Restarting animation after respawn");
+            animationFrameId = requestAnimationFrame(animate);
+          }
+        }
+      }, 1000);
+    }
+
+    // Update UI elements
+    function updateUI() {
+      document.getElementById('score').textContent = `Score: ${Math.floor(score)}`;
+      document.getElementById('laser-count').textContent = `Laser Eyes: ${laserCount}/3`;
+      // Retry display is updated separately in updateRetryDisplay()
+    }
+
+    // Function to update the player texture based on laser count and bonus mode
+    function updatePlayerTexture() {
+      console.log("Updating player texture based on laserCount:", laserCount, "bonusActive:", laserBonusActive, "fullPower:", fullPowerMode);
+      
+      // Make sure we have a valid texture before updating
+      let textureToUse;
+      
+      if (fullPowerMode && playerTextureGlow3) {
+        // Always use all eyes glowing during full power mode
+        textureToUse = playerTextureGlow3;
+        console.log("Using full power texture (ALL eyes)");
+      } else if (laserBonusActive && playerTextureGlow3) {
+        // Use the bonus/all-eyes texture when in bonus mode
+        textureToUse = playerTextureGlow3;
+        console.log("Using bonus/all eyes texture");
+      } else {
+        // Choose texture based on laser count
+        if (laserCount === 0 && playerTexture) {
+          textureToUse = playerTexture; // No glow
+          console.log("Using base texture (no glow)");
+        } else if (laserCount === 1 && playerTextureGlow1) {
+          textureToUse = playerTextureGlow1; // Left eye only
+          console.log("Using glow 1 texture (LEFT eye)");
+        } else if (laserCount === 2 && playerTextureGlow2) {
+          textureToUse = playerTextureGlow2; // Left + middle eyes
+          console.log("Using glow 2 texture (LEFT+MIDDLE eyes)");
+        } else if (laserCount >= 3 && playerTextureGlow3) {
+          textureToUse = playerTextureGlow3; // All eyes
+          console.log("Using glow 3 texture (ALL eyes)");
+        } else {
+          console.log("No valid texture found for current state, keeping current texture");
+          return; // Don't update if we don't have a valid texture
+        }
+      }
+      
+      // Only update if we have a valid texture
+      if (textureToUse) {
+        player.material.map = textureToUse;
+        player.material.needsUpdate = true;
+      }
+    }
+    
+    // LASER BEAM SYSTEM
+    const laserBeams = [];
+    const maxLaserBeams = 10;
+    
+    // Explosion system variables - moved to the top
+    const explosionPool = [];
+    const maxExplosions = 10;
+    
+    // Create a more visible laser beam
+    function createThickLaserBeam() {
+      // Create a simpler, but highly visible laser beam
+      const laserWidth = 6; // Reduced from 10 to 6 for a thinner beam
+      const laserGeometry = new THREE.PlaneGeometry(1, laserWidth);
+      
+      // Simpler material without texture to ensure it works
+      const laserMaterial = new THREE.MeshBasicMaterial({
+        color: 0xff0000, // Bright red
+        transparent: true,
+        opacity: 1.0, // Already at maximum opacity
+        side: THREE.DoubleSide,
+        depthTest: false,
+        blending: THREE.AdditiveBlending
+      });
+      
+      const beam = new THREE.Mesh(laserGeometry, laserMaterial);
+      
+      // Add simple glow
+      const glowGeometry = new THREE.PlaneGeometry(1, laserWidth * 1.5); // Reduced from 2x to 1.5x for a thinner glow
+      const glowMaterial = new THREE.MeshBasicMaterial({
+        color: 0xff0000,
+        transparent: true,
+        opacity: 0.7, // Increased from 0.4 to 0.7 for more visibility
+        side: THREE.DoubleSide,
+        depthTest: false,
+        blending: THREE.AdditiveBlending
+      });
+      
+      const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+      beam.add(glow);
+      
+      beam.visible = false;
+      beam.userData = { 
+        active: false,
+        progress: 0,
+        fixationTime: 0,
+        fixationPhase: false,
+        startPos: new THREE.Vector3(),
+        endPos: new THREE.Vector3(),
+        eyeIndex: 0
+      };
+      
+      beam.renderOrder = 100;
+      scene.add(beam);
+      return beam;
+    }
+    
+    // Initialize the laser beam pool and explosion system
+    function initLaserBeams() {
+      // Create several laser beam objects that we can reuse
+      for (let i = 0; i < maxLaserBeams; i++) {
+        // Create thicker beam using plane geometry
+        const beam = createThickLaserBeam();
+        laserBeams.push(beam);
+      }
+      console.log("Initialized", maxLaserBeams, "laser beams");
+      
+      // Initialize the explosion particles
+      initExplosions();
+      console.log("Initialized explosion system");
+    }
+    
+    // Function to get eye position based on current laser count
+    function getEyePosition(eyeIndex) {
+      // Define positions of the three eyes relative to player center
+      // These values are based on the Rocket Pizza sprite design
+      const eyePositions = [
+        new THREE.Vector3(-35, 25, 1),  // Left eye (adjusted x from -40 to -35)
+        new THREE.Vector3(0, 40, 1),    // Middle (top) eye
+        new THREE.Vector3(35, 25, 1)    // Right eye (adjusted x from 40 to 35)
+      ];
+      
+      // Get the specified eye position, clamped to valid indices
+      const index = Math.max(0, Math.min(eyeIndex, 2));
+      
+      // Add safety check
+      if (index < 0 || index >= eyePositions.length) {
+        console.error("Invalid eye index:", eyeIndex);
+        return new THREE.Vector3(0, 0, 1).add(playerContainer.position); // Default position
+      }
+      
+      const position = eyePositions[index].clone();
+      console.log(`Getting eye position for index ${index}: (${position.x}, ${position.y})`);
+      
+      // Apply rotation matrix to account for player rotation
+      position.applyAxisAngle(new THREE.Vector3(0, 0, 1), playerContainer.rotation.z);
+      
+      // Convert to world position by adding player container position
+      position.x += playerContainer.position.x;
+      position.y += playerContainer.position.y;
+      
+      return position;
+    }
+    
+    // Function to shoot a laser from one of the player's eyes
+    function shootLaserAt(target, specificEyeIndex) {
+      // Debug info
+      console.log("------------------------------");
+      console.log("SHOOTING LASER:");
+      console.log("Target position:", target.position.x, target.position.y);
+      console.log("Current laser count:", laserCount);
+      
+      // Use the provided eye index or determine which eye to fire from
+      let eyeIndex = specificEyeIndex;
+      
+      if (eyeIndex === undefined) {
+        if (laserBonusActive) {
+          // During laser bonus, randomly choose which eye to fire from
+          eyeIndex = Math.floor(Math.random() * 3);
+        } else {
+          // Use the eye that corresponds to the current laser count
+          eyeIndex = Math.min(laserCount - 1, 2); // Cap at 2 (third eye)
+        }
+      }
+      
+      // Ensure eye index is valid (0-2)
+      eyeIndex = Math.max(0, Math.min(2, eyeIndex));
+      console.log("Using eye index:", eyeIndex);
+      
+      // Play the appropriate zap sound based on which eye is firing
+      let zapSound;
+      
+      if (eyeIndex === 0) {
+        zapSound = 'zap1';
+      } else if (eyeIndex === 1) {
+        zapSound = 'zap2';
+      } else if (eyeIndex === 2) {
+        zapSound = 'zap3';
+      }
+      
+      // Play the specific zap sound based on the eye
+      if (zapSound) {
+        playDirectSound(zapSound);
+        logAudio(`Triggered zap sound: ${zapSound} for eye ${eyeIndex}`);
+      }
+      
+      // Get the starting position for the laser beam
+      const startPos = getEyePosition(eyeIndex);
+      console.log("Starting position:", startPos.x, startPos.y);
+      
+      // Get first inactive laser beam from the pool
+      const beam = laserBeams.find(b => !b.userData.active);
+      if (!beam) {
+        console.log("No available beams!");
+        return; // No available beams
+      }
+      
+      // Get position of target
+      const endPos = new THREE.Vector3(target.position.x, target.position.y, 2);
+      console.log("Target position:", endPos.x, endPos.y);
+      
+      // Move the beam to the start position
+      beam.position.copy(startPos);
+      beam.position.z = 2;
+      
+      // Store data for animation
+      beam.userData.startPos = startPos.clone();
+      beam.userData.endPos = endPos.clone();
+      beam.userData.active = true;
+      beam.userData.progress = 0;
+      beam.userData.fixationPhase = false;
+      beam.userData.fixationTime = 30;
+      beam.userData.eyeIndex = eyeIndex;
+      beam.userData.targetObj = target; // Store reference to the target
+      
+      // Make it visible
+      beam.visible = true;
+      console.log("Beam activated:", beam.visible, "eyeIndex:", beam.userData.eyeIndex);
+      console.log("------------------------------");
+    }
+    
+    // Function to position and scale a beam between two points
+    function positionBeam(beam, start, end) {
+      // Calculate the center position between start and end
+      const center = new THREE.Vector3()
+        .addVectors(start, end)
+        .multiplyScalar(0.5);
+      
+      // Set the beam at this center
+      beam.position.copy(center);
+      beam.position.z = 2; // Ensure it's in front
+      
+      // Calculate direction and distance
+      const direction = new THREE.Vector3().subVectors(end, start);
+      const length = direction.length();
+      
+      // For advanced beams, only scale core and glows
+      if (beam.userData.beam) {
+        beam.userData.beam.scale.set(length, beam.userData.beam.scale.y, 1);
+        beam.userData.innerGlow.scale.set(length, beam.userData.innerGlow.scale.y, 1);
+        beam.userData.outerGlow.scale.set(length, beam.userData.outerGlow.scale.y, 1);
+      } else {
+        // Legacy scaling for simple beams
+        beam.scale.set(length, beam.scale.y, 1);
+      }
+      
+      // Calculate angle to rotate the beam
+      const angle = Math.atan2(direction.y, direction.x);
+      beam.rotation.z = angle;
+    }
+    
+    // Function to update active laser beams
+    function updateLaserBeams() {
+      for (let i = 0; i < laserBeams.length; i++) {
+        const beam = laserBeams[i];
+        
+        if (beam.userData.active) {
+          // Update animation phases
+          beam.userData.pulsePhase = (beam.userData.pulsePhase || 0) + 0.1;
+          const pulseVal = Math.sin(beam.userData.pulsePhase) * 0.5 + 0.5; // 0 to 1 pulse
+          
+          // Always update the starting position to follow the eye as the player moves
+          const currentEyePos = getEyePosition(beam.userData.eyeIndex);
+          beam.userData.startPos.copy(currentEyePos);
+          
+          const startPos = beam.userData.startPos;
+          const endPos = beam.userData.endPos;
+          
+          if (!beam.userData.fixationPhase) {
+            // Extension phase - beam is traveling toward target
+            beam.userData.progress += 0.2; // Faster beam movement
+            
+            if (beam.userData.progress >= 1) {
+              // Beam has reached the target, start fixation phase
+              beam.userData.fixationPhase = true;
+              
+              // Create an explosion at the target position
+              createExplosion(endPos, 0x00ffff); // Cyan/blue explosion
+            }
+            
+            // Calculate current endpoint based on progress
+            const currentEnd = new THREE.Vector3().lerpVectors(
+              startPos,
+              endPos,
+              beam.userData.progress
+            );
+            
+            // Position the main beam container
+            positionBeam(beam, startPos, currentEnd);
+            
+            // Position rings along beam length
+            if (beam.userData.rings) {
+              const beamDirection = new THREE.Vector3().subVectors(currentEnd, startPos).normalize();
+              const beamLength = startPos.distanceTo(currentEnd);
+              
+              beam.userData.rings.forEach((ring, index) => {
+                // Space rings evenly along beam
+                const t = (index / (beam.userData.rings.length - 1)) * 0.8 + 0.1;
+                const ringPos = new THREE.Vector3().lerpVectors(startPos, currentEnd, t);
+                
+                // Add small fluctuation
+                const offset = Math.sin(beam.userData.pulsePhase + index) * 5;
+                ringPos.add(beamDirection.clone().multiplyScalar(offset));
+                
+                ring.position.copy(ringPos);
+                
+                // Scale and opacity animation
+                const scale = 0.5 + 0.5 * Math.sin(beam.userData.pulsePhase * 2 + index);
+                ring.scale.set(scale, scale, scale);
+                ring.material.opacity = 0.4 + 0.3 * pulseVal;
+              });
+            }
+            
+            // Update particles
+            if (beam.userData.particles) {
+              const beamDirection = new THREE.Vector3().subVectors(currentEnd, startPos).normalize();
+              const beamLength = startPos.distanceTo(currentEnd);
+              
+              beam.userData.particles.forEach((particle, index) => {
+                // Random position along beam
+                const t = Math.sin(beam.userData.pulsePhase + index * 0.1) * 0.5 + 0.5;
+                const particlePos = new THREE.Vector3().lerpVectors(startPos, currentEnd, t);
+                
+                // Add random offset perpendicular to beam
+                const perpOffset = new THREE.Vector3(
+                  Math.sin(beam.userData.pulsePhase * 2 + index),
+                  Math.cos(beam.userData.pulsePhase * 3 + index),
+                  0
+                );
+                perpOffset.multiplyScalar(3 + Math.sin(beam.userData.pulsePhase + index * 0.5) * 2);
+                
+                particlePos.add(perpOffset);
+                particle.position.copy(particlePos);
+                
+                // Size pulse and flicker
+                const particleScale = 0.5 + Math.random() * 1.5;
+                particle.scale.set(particleScale, particleScale, 1);
+                
+                // Opacity flicker
+                particle.material.opacity = Math.random() * 0.5 + 0.2;
+                
+                // Color variation
+                const hue = (beam.userData.pulsePhase * 0.05 + index * 0.1) % 1;
+                particle.material.color.setHSL(0.5, 0.8, 0.7 + 0.3 * Math.random()); // Blue-cyan range
+              });
+            }
+            
+            // Pulse beam core and glows
+            if (beam.userData.beam) {
+              // Core beam intensity pulses
+              beam.userData.beam.material.opacity = 0.7 + 0.3 * pulseVal;
+              // Glow effects pulse in opposite phase
+              beam.userData.innerGlow.material.opacity = 0.6 + 0.4 * (1 - pulseVal);
+              beam.userData.outerGlow.material.opacity = 0.3 + 0.2 * pulseVal;
+            }
+          } else {
+            // Fixation phase - beam is fixed on target
+            beam.userData.fixationTime--;
+            
+            // Keep beam positioned at full extension
+            positionBeam(beam, startPos, endPos);
+            
+            // Continued animation of rings and particles during fixation
+            if (beam.userData.rings) {
+              const beamDirection = new THREE.Vector3().subVectors(endPos, startPos).normalize();
+              const beamLength = startPos.distanceTo(endPos);
+              
+              beam.userData.rings.forEach((ring, index) => {
+                // Space rings evenly along beam
+                const t = (index / (beam.userData.rings.length - 1)) * 0.8 + 0.1;
+                const ringPos = new THREE.Vector3().lerpVectors(startPos, endPos, t);
+                
+                // Add small fluctuation
+                const offset = Math.sin(beam.userData.pulsePhase + index) * 5;
+                ringPos.add(beamDirection.clone().multiplyScalar(offset));
+                
+                ring.position.copy(ringPos);
+                
+                // Scale and opacity animation
+                const scale = 0.5 + 0.5 * Math.sin(beam.userData.pulsePhase * 2 + index);
+                ring.scale.set(scale, scale, scale);
+                
+                // Fade out rings as fixation ends
+                if (beam.userData.fixationTime < 10) {
+                  ring.material.opacity = (beam.userData.fixationTime / 10) * (0.4 + 0.3 * pulseVal);
+                }
+              });
+            }
+            
+            // Update particles during fixation
+            if (beam.userData.particles) {
+              // Similar animation as extension phase but fade out at end
+              beam.userData.particles.forEach((particle, index) => {
+                // Fade out particles as fixation ends
+                if (beam.userData.fixationTime < 10) {
+                  particle.material.opacity = (beam.userData.fixationTime / 10) * (Math.random() * 0.5 + 0.2);
+                }
+              });
+            }
+            
+            // Fade out beam core and glows as fixation ends
+            if (beam.userData.beam && beam.userData.fixationTime < 10) {
+              const fadeRatio = beam.userData.fixationTime / 10;
+              beam.userData.beam.material.opacity = fadeRatio * (0.7 + 0.3 * pulseVal);
+              beam.userData.innerGlow.material.opacity = fadeRatio * (0.6 + 0.4 * (1 - pulseVal));
+              beam.userData.outerGlow.material.opacity = fadeRatio * (0.3 + 0.2 * pulseVal);
+            }
+            
+            // If fixation time is over, deactivate the beam
+            if (beam.userData.fixationTime <= 0) {
+              beam.visible = false;
+              beam.userData.active = false;
+            }
+          }
+        }
+      }
+      
+      // Update explosion particles
+      updateExplosions();
+    }
+
+    // Background setup
+    const backgroundFiles = [
+      'Assets/Visual/background.png',
+      'Assets/Visual/background2.png',
+      'Assets/Visual/background3.png',
+      'Assets/Visual/background7_barcelona.jpg', // City background - Barcelona
+      'Assets/Visual/background8_new york.jpg',   // City background - New York
+      'Assets/Visual/background9_rio.jpg',        // City background - Rio
+      'Assets/Visual/background10_tokyo.png',      // City background - Tokyo
+      'Assets/Visual/background11_cemetery entrance.png', // Cemetery entrance background
+      'Assets/Visual/background12_cemetery.png',    // Cemetery background
+      'Assets/Visual/background13_moon.png'        // Moon background (final)
+    ];
+    
+    const backgrounds = [];
+    const backgroundWidth = window.innerWidth;
+    const backgroundHeight = window.innerHeight;
+    
+    // Track which background is currently visible in center screen
+    let currentBackgroundIndex = 0; 
+    let isCityBackground = false;
+    let isMoonBackground = false;
+    let fadeInProgress = false;
+    
+    // Create fade overlay for transitions
+    const fadeOverlay = document.createElement('div');
+    fadeOverlay.id = 'fade-overlay';
+    fadeOverlay.style.position = 'absolute';
+    fadeOverlay.style.top = '0';
+    fadeOverlay.style.left = '0';
+    fadeOverlay.style.width = '100%';
+    fadeOverlay.style.height = '100%';
+    fadeOverlay.style.backgroundColor = 'black';
+    fadeOverlay.style.opacity = '0';
+    fadeOverlay.style.zIndex = '250'; // Below the video but above everything else
+    fadeOverlay.style.pointerEvents = 'none'; // Don't intercept clicks
+    fadeOverlay.style.transition = 'opacity 2s ease-in-out';
+    document.body.appendChild(fadeOverlay);
+    
+    // Function to check if a background is in the center view with enough visibility to count as active
+    function checkBackgroundVisibility() {
+      // Reset flags before checking
+      isCityBackground = false;
+      isMoonBackground = false;
+      
+      // Determine which background is in the center view
+      let centerBackground = null;
+      let centerVisibility = 0;
+      
+      // Check all backgrounds to find which one is most visible in center
+      for (let i = 0; i < backgrounds.length; i++) {
+        const bg = backgrounds[i];
+        
+        // Calculate how much of this background is in the center of screen
+        const centerX = 0; // Center of screen
+        const bgLeft = bg.position.x - backgroundWidth/2;
+        const bgRight = bg.position.x + backgroundWidth/2;
+        
+        // Only consider backgrounds that overlap the center
+        if (bgLeft <= centerX && bgRight >= centerX) {
+          // Calculate how much of the center is covered by this background
+          const leftSide = Math.max(bgLeft, -backgroundWidth/2);
+          const rightSide = Math.min(bgRight, backgroundWidth/2);
+          const visibleWidth = rightSide - leftSide;
+          
+          // If this background has more center coverage, make it the current one
+          if (visibleWidth > centerVisibility) {
+            centerVisibility = visibleWidth;
+            centerBackground = bg;
+          }
+        }
+      }
+      
+      // Now that we have the most center-visible background, check if it's a city
+      // Or if it's the moon background
+      if (centerBackground && centerBackground.userData && centerBackground.userData.fileIndex !== undefined) {
+        currentBackgroundIndex = centerBackground.userData.fileIndex;
+        
+        // Check if it's a city background (Barcelona, New York, Rio, or Tokyo) AND covers enough center
+        if ((currentBackgroundIndex === 3 || currentBackgroundIndex === 4 || 
+             currentBackgroundIndex === 5 || currentBackgroundIndex === 6) && 
+            (centerVisibility >= backgroundWidth * 0.5)) {
+          isCityBackground = true;
+          console.log("City background detected:", 
+                    currentBackgroundIndex === 3 ? "Barcelona" : 
+                    currentBackgroundIndex === 4 ? "New York" : 
+                    currentBackgroundIndex === 5 ? "Rio" : "Tokyo", 
+                    "Visibility:", Math.round(centerVisibility/backgroundWidth*100) + "%");
+        } 
+        // Check if it's the moon background (final) AND covers enough center
+        else if (currentBackgroundIndex === backgroundFiles.length - 1 && 
+                 centerVisibility >= backgroundWidth * 0.7) {
+          isMoonBackground = true;
+          console.log("🌙 Moon background detected!", 
+                    "Visibility:", Math.round(centerVisibility/backgroundWidth*100) + "%");
+          
+          // If not already fading, moon is very visible, and video hasn't played yet, start fade transition
+          if (!fadeInProgress && centerVisibility >= backgroundWidth * 0.9 && !videoHasPlayed && !gameOver) {
+            fadeInProgress = true;
+            startFadeToVideo();
+          }
+        }
+        else {
+          console.log("Regular background detected, index:", currentBackgroundIndex, 
+                    "Visibility:", Math.round(centerVisibility/backgroundWidth*100) + "%");
+        }
+      }
+      
+      return isCityBackground;
+    }
+
+    // Function to update background positions for continuous scrolling
+    function updateBackgrounds(speed) {
+      // Skip if no backgrounds are loaded yet
+      if (backgrounds.length === 0) return;
+      
+      for (let i = 0; i < backgrounds.length; i++) {
+        // Move each background to the left
+        backgrounds[i].position.x -= speed;
+        
+        // If a background goes completely off-screen to the left
+        if (backgrounds[i].position.x < -backgroundWidth) {
+          // Find the rightmost background
+          let rightmostX = -Infinity;
+          let rightmostIndex = 0;
+          
+          for (let j = 0; j < backgrounds.length; j++) {
+            if (backgrounds[j].position.x > rightmostX) {
+              rightmostX = backgrounds[j].position.x;
+              rightmostIndex = j;
+            }
+          }
+          
+          // Place the off-screen background to the right of the rightmost one
+          backgrounds[i].position.x = backgrounds[rightmostIndex].position.x + backgroundWidth;
+        }
+      }
+      
+      // Update which background is currently visible
+      checkBackgroundVisibility();
+    }
+    
+    // Function to ensure there's always a background visible on screen
+    function ensureBackgroundsVisible() {
+      // Find if there's a background visible in the center area
+      let centerVisible = false;
+      for (let i = 0; i < backgrounds.length; i++) {
+        const bgLeft = backgrounds[i].position.x - backgroundWidth/2;
+        const bgRight = backgrounds[i].position.x + backgroundWidth/2;
+        
+        // Check if this background covers center screen
+        if (bgLeft <= 0 && bgRight >= 0) {
+          centerVisible = true;
+          break;
+        }
+      }
+      
+      // If no background is covering center screen, reposition one
+      if (!centerVisible && backgrounds.length > 0) {
+        // Find the background closest to center
+        let closestBg = 0;
+        let closestDist = Infinity;
+        
+        for (let i = 0; i < backgrounds.length; i++) {
+          const dist = Math.abs(backgrounds[i].position.x);
+          if (dist < closestDist) {
+            closestDist = dist;
+            closestBg = i;
+          }
+        }
+        
+        // Reposition it to cover center screen
+        backgrounds[closestBg].position.x = 0;
+      }
+    }
+    
+    // Initialize backgrounds
+    setupBackgrounds();
+
+    // Initialize the laser beam system
+    initLaserBeams();
+
+    // Ground setup
+    const groundGeometry = new THREE.PlaneGeometry(window.innerWidth * 10, 20);
+    const groundMaterial = new THREE.MeshBasicMaterial({ color: 0x3d3d3d }); // Dark gray ground
+    const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+    ground.position.set(0, -window.innerHeight / 2 + 10, 0);
+    scene.add(ground);
+
+    // Game objects
+    const enemies = [];
+    const obstacles = [];
+    const collectibles = [];
+    const triggerX = 300; // Increased from 250 to 300 to account for wider sprites
+
+    // Texture cache with fallbacks
+    const textureCache = {
+      'pizza': createFallbackTexture('yellow'),
+      'bitcoin': createFallbackTexture('gold'),
+      'enemy': createFallbackTexture('blue'),
+      'building': createFallbackTexture('gray'),
+      'candle': createFallbackTexture('red'),
+      'candleLong': createFallbackTexture('darkred') // Add new red candle long texture cache entry
+    };
+
+    // Load textures
+    loadTextureWithFallback('Assets/Visual/pizza slice.png', 'yellow', texture => {
+      texture.premultiplyAlpha = false; // Preserve transparency
+      textureCache.pizza = texture;
+    });
+    
+    loadTextureWithFallback('Assets/Visual/bitcoin.png', 'gold', texture => {
+      texture.premultiplyAlpha = false; // Preserve transparency
+      textureCache.bitcoin = texture;
+    });
+    
+    loadTextureWithFallback('Assets/Visual/blue mutant splattered.png', 'blue', texture => {
+      texture.premultiplyAlpha = false; // Preserve transparency
+      textureCache.enemy = texture;
+    });
+    
+    loadTextureWithFallback('Assets/Visual/bank building.png', 'gray', texture => {
+      texture.premultiplyAlpha = false; // Preserve transparency
+      textureCache.building = texture;
+    });
+    
+    loadTextureWithFallback('Assets/Visual/red candle.png', 'red', texture => {
+      texture.premultiplyAlpha = false; // Preserve transparency
+      textureCache.candle = texture;
+    });
+    
+    // Load new red candle long texture
+    loadTextureWithFallback('Assets/Visual/red candle long.png', 'darkred', texture => {
+      texture.premultiplyAlpha = false; // Preserve transparency
+      textureCache.candleLong = texture;
+    });
+
+    // Very simple direct audio system
+    const gameAudio = document.getElementById('gameAudio');
+    const audioTestBtn = document.getElementById('audio-test');
+    const audioIndicator = document.getElementById('audio-indicator');
+    let audioEnabled = false;
+    
+    // Sound file mappings - using only Audio folder
+    const soundFiles = {
+      'moltoBene': 'Assets/Audio/molto bene.mp3',
+      'collectBitcoin': 'Assets/Audio/collect bitcoin.mp3',
+      'zap1': 'Assets/Audio/zap 1.mp3',  // Specific zap sounds only
+      'zap2': 'Assets/Audio/zap 2.mp3',
+      'zap3': 'Assets/Audio/zap 3.mp3',
+      // Background music files with correct filenames
+      'menuMusic': 'Assets/Audio/background music_main menu.mp3',
+      'gameMusic': 'Assets/Audio/background music_gameplay.mp3',
+      'gameOverMusic': 'Assets/Audio/background music_game over.mp3'
+    };
+    
+    // Function to log audio message - modified to not display visually
+    function logAudio(message) {
+      console.log('%c AUDIO: ' + message, 'background: #222; color: #bada55');
+      // No longer updating UI indicator
+    }
+    
+    // Remove test button handler
+    // audioTestBtn.addEventListener('click', function() { ... });
+    
+    // Super simple sound player - Audio folder only
+    function playDirectSound(soundType) {
+      const soundPath = soundFiles[soundType];
+      if (!soundPath) {
+        logAudio(`No path defined for sound type: ${soundType}`);
+        return;
+      }
+      
+      try {
+        // Create a new audio element
+        const sound = new Audio(soundPath);
+        sound.volume = 1.0;
+        
+        // Play with proper error handling
+        const playPromise = sound.play();
+        if (playPromise !== undefined) {
+          playPromise
+            .then(() => {
+              logAudio(`Playing ${soundType}`);
+            })
+            .catch(e => {
+              logAudio(`Error playing ${soundType}: ${e.message}`);
+            });
+        }
+        
+        // Debug events
+        sound.onended = () => logAudio(`${soundType} finished playing`);
+        sound.onerror = (e) => {
+          logAudio(`Error with ${soundType}: ${e.type}`);
+          // Show more details about the error
+          if (sound.error) {
+            logAudio(`Error code: ${sound.error.code}, message: ${sound.error.message}`);
+          }
+        };
+      } catch(e) {
+        logAudio(`Exception with ${soundType}: ${e.message}`);
+      }
+    }
+    
+    // Simplified tryPlaySound function
+    function tryPlaySound(sound) {
+      // Map old sound names to new ones if needed
+      let soundType = sound;
+      if (sound === 'collect') soundType = 'collectBitcoin';
+      
+      // Simple direct play of valid sound types
+      if (soundType === 'moltoBene' || 
+          soundType === 'collectBitcoin' || 
+          soundType === 'zap1' || 
+          soundType === 'zap2' || 
+          soundType === 'zap3') {
+        playDirectSound(soundType);
+      }
+    }
+    
+    // Function to enable audio (keep this simple)
+    function enableAudio() {
+      if (!audioEnabled) {
+        audioEnabled = true;
+        logAudio("Audio enabled by user interaction");
+        
+        // Initialize audio context if needed (for modern browsers)
+        if (window.AudioContext || window.webkitAudioContext) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          if (!window.audioContext) {
+            window.audioContext = new AudioContext();
+          }
+        }
+        
+        // Play background music for the current screen
+        if (!audioInitialized) {
+          // Determine which music to play based on current screen
+          if (gameOver) {
+            playBackgroundMusic('gameOverMusic');
+          } else if (gameActive) {
+            playBackgroundMusic('gameMusic');
+          } else {
+            playBackgroundMusic('menuMusic');
+          }
+          audioInitialized = true;
+        }
+      }
+    }
+    
+    // Add event listeners to enable audio on any user interaction
+    document.addEventListener('click', enableAudio);
+    document.addEventListener('keydown', enableAudio);
+    document.addEventListener('touchstart', enableAudio);
+    
+    // "Molto Bene!" exclamation system
+    let moltoBeneSprite = null;
+    
+    // Create the Molto Bene sprite
+    function createMoltoBeneSprite() {
+      // Create a canvas for the text
+      const canvas = document.createElement('canvas');
+      canvas.width = 256;
+      canvas.height = 128;
+      const ctx = canvas.getContext('2d');
+      
+      // Clear canvas
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // Try to load the image
+      const img = new Image();
+      img.onload = function() {
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        if (moltoBeneSprite && moltoBeneSprite.material) {
+          moltoBeneSprite.material.map.needsUpdate = true;
+        }
+      };
+      img.onerror = function() {
+        // Fallback if image doesn't load
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = 'white';
+        ctx.font = 'bold 36px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('Molto Bene!', canvas.width/2, canvas.height/2);
+        if (moltoBeneSprite && moltoBeneSprite.material) {
+          moltoBeneSprite.material.map.needsUpdate = true;
+        }
+      };
+      img.src = 'Assets/Visual/molto bene.png';
+      
+      // Create texture from canvas
+      const texture = new THREE.CanvasTexture(canvas);
+      
+      // Create sprite material
+      const material = new THREE.SpriteMaterial({
+        map: texture,
+        transparent: true,
+        opacity: 0 // Start invisible
+      });
+      
+      // Create sprite
+      const sprite = new THREE.Sprite(material);
+      sprite.scale.set(150, 75, 1); // Reduced by 25% from 200x100 to 150x75
+      sprite.visible = false;
+      
+      // Add to scene
+      scene.add(sprite);
+      
+      return sprite;
+    }
+    
+    // Initialize the Molto Bene sprite
+    moltoBeneSprite = createMoltoBeneSprite();
+    
+    // Show "Molto Bene!" above player
+    function showMoltoBene() {
+      console.log("showMoltoBene called");
+      
+      // Play sound directly
+      playDirectSound('moltoBene');
+      
+      if (!moltoBeneSprite) return;
+      
+      // Position above player
+      moltoBeneSprite.position.set(
+        playerContainer.position.x,
+        playerContainer.position.y + 100, // Position above player
+        5 // Make sure it's in front
+      );
+      
+      // Make visible
+      moltoBeneSprite.visible = true;
+      moltoBeneSprite.material.opacity = 0;
+      
+      // Set animation data
+      moltoBeneSprite.userData = {
+        active: true,
+        startTime: Date.now(),
+        duration: 1500 // 1.5 seconds
+      };
+    }
+    
+    // Update "Molto Bene!" animation
+    function updateMoltoBene() {
+      if (!moltoBeneSprite || !moltoBeneSprite.userData.active) return;
+      
+      const elapsed = Date.now() - moltoBeneSprite.userData.startTime;
+      const duration = moltoBeneSprite.userData.duration;
+      
+      if (elapsed >= duration) {
+        // Animation complete
+        moltoBeneSprite.visible = false;
+        moltoBeneSprite.userData.active = false;
+        return;
+      }
+      
+      // Keep positioned above player
+      moltoBeneSprite.position.x = playerContainer.position.x;
+      moltoBeneSprite.position.y = playerContainer.position.y + 100;
+      
+      // Fade in/out animation
+      let opacity = 1;
+      
+      // Fade in during first 20%
+      if (elapsed < duration * 0.2) {
+        opacity = elapsed / (duration * 0.2);
+      } 
+      // Fade out during last 30%
+      else if (elapsed > duration * 0.7) {
+        opacity = 1 - ((elapsed - duration * 0.7) / (duration * 0.3));
+      }
+      
+      // Set opacity
+      moltoBeneSprite.material.opacity = opacity;
+    }
+
+    // Spawning logic
+    function spawnObject(type) {
+      // For bank buildings, only spawn in city backgrounds
+      if (type === 'building' && !isCityBackground) {
+        console.log("Prevented bank building spawn in non-city background");
+        return; // Don't spawn bank building in non-city background
+      }
+      
+      let texture = textureCache[type];
+      
+      // Define sizes with fixed width-to-height ratios
+      let width, height;
+      
+      if (type === 'pizza') {
+        width = 60;
+        height = 60;
+      } else if (type === 'bitcoin') {
+        width = 60;
+        height = 60;
+      } else if (type === 'enemy') {
+        // Blue mutant - make it 25% bigger
+        width = 250; // Increased from 200 to 250 (25% larger)
+        height = 125; // Increased from 100 to 125 (25% larger)
+      } else if (type === 'building') {
+        // Bank building - make it much wider
+        width = 240; // Increased from 180 to 240
+        height = 200;
+      } else if (type === 'candle') {
+        width = 80;
+        height = 120;
+      } else if (type === 'candleLong') {
+        width = 80;
+        // Varying height for the long candles
+        height = 200 + Math.random() * 300; // Between 200-500 pixels tall
+      }
+
+      // Create material with proper transparency settings
+      const material = new THREE.SpriteMaterial({ 
+        map: texture,
+        transparent: true,
+        alphaTest: 0.1 // Helps with transparency
+      });
+      
+      const sprite = new THREE.Sprite(material);
+      sprite.scale.set(width, height, 1);
+      sprite.width = width;
+      sprite.height = height;
+      sprite.type = type; // Set type property
+      
+      // Position logic
+      let yPosition;
+      if (type === 'building') {
+        // Place buildings at the bottom of the screen, sitting on the ground
+        yPosition = -window.innerHeight / 2 + sprite.height / 2 + 10; // +10 for ground height
+      } else if (type === 'candleLong') {
+        // Position candle long at the top of the screen, with most of it visible
+        yPosition = window.innerHeight / 2 - 50; // Just below the top edge
+      } else {
+        // Random position for other objects
+        yPosition = Math.random() * window.innerHeight - window.innerHeight / 2;
+      }
+      
+      sprite.position.set(window.innerWidth, yPosition, 0);
+      scene.add(sprite);
+
+      if (type === 'enemy' || type === 'candleLong') {
+        enemies.push(sprite);
+      }
+      else if (type === 'building' || type === 'candle') obstacles.push(sprite);
+      else collectibles.push(sprite);
+    }
+
+    // Spawn timers
+    let lastSpawn = 0;
+    let lastCandleLongSpawn = 0; // Separate timer for candle long
+    let enemySpawnChance = 0.18; // Increased from 0.12 to 0.18 for more enemies
+    let candleLongSpawnChance = 0.05; // 5% chance to spawn a long candle
+    
+    function updateSpawns(time) {
+      // Don't spawn anything if we're on the moon background
+      if (isMoonBackground) {
+        return; // No enemies or objects on the moon
+      }
+
+      // Verify current background before spawning
+      const inCityNow = checkBackgroundVisibility();
+      
+      // Regular spawn logic
+      if (time - lastSpawn > 1.8) { // Increased from 1.5 to 1.8 seconds for wider objects
+        // Determine what to spawn
+        const spawnRoll = Math.random();
+        let typeToSpawn;
+        
+        if (spawnRoll < enemySpawnChance) {
+          typeToSpawn = 'enemy';
+        } else {
+          // First, determine available types based on current background
+          let availableTypes;
+          
+          if (inCityNow) {
+            // City background (Barcelona or New York) - include bank buildings
+            // Reduced pizza frequency (now appears less often)
+            availableTypes = ['bitcoin', 'bitcoin', 'bitcoin', 'bitcoin', 'pizza', 'building', 'building', 'candle', 'candle'];
+            console.log("In city: can spawn bank buildings");
+          } else {
+            // Non-city background - exclude bank buildings
+            // Reduced pizza frequency (now appears less often)
+            availableTypes = ['bitcoin', 'bitcoin', 'bitcoin', 'bitcoin', 'pizza', 'candle', 'candle'];
+            console.log("Not in city: no bank buildings");
+          }
+          
+          typeToSpawn = availableTypes[Math.floor(Math.random() * availableTypes.length)];
+        }
+        
+        spawnObject(typeToSpawn);
+        lastSpawn = time;
+      }
+      
+      // Red candle long spawn logic - every 5-10 seconds on average
+      if (time - lastCandleLongSpawn > 5 && Math.random() < candleLongSpawnChance) {
+        spawnObject('candleLong');
+        lastCandleLongSpawn = time;
+      }
+    }
+
+    // Collision detection
+    function checkCollision(a, b) {
+      // Define collision margin (percentage reduction from full size)
+      // Higher values = smaller hitbox = less sensitive collisions
+      const marginA = a.type === 'enemy' ? 0.4 : 0.3; // 40% margin for enemies, 30% for other objects
+      const marginB = b.type === 'enemy' ? 0.4 : 0.3;
+      
+      // For the player (Rocket Pizza), use a specific margin
+      const playerMarginX = 0.45; // 45% reduction horizontally
+      const playerMarginY = 0.35; // 35% reduction vertically
+      
+      // Calculate reduced dimensions for sprite A
+      let aWidthReduced, aHeightReduced, aPosX, aPosY;
+      if (a === player) {
+        aWidthReduced = a.width * (1 - playerMarginX);
+        aHeightReduced = a.height * (1 - playerMarginY);
+        aPosX = playerContainer.position.x; // Use container position
+        aPosY = playerContainer.position.y; // Use container position
+      } else {
+        aWidthReduced = a.width * (1 - marginA);
+        aHeightReduced = a.height * (1 - marginA);
+        aPosX = a.position.x;
+        aPosY = a.position.y;
+      }
+      
+      // Calculate reduced dimensions for sprite B
+      let bWidthReduced, bHeightReduced, bPosX, bPosY;
+      if (b === player) {
+        bWidthReduced = b.width * (1 - playerMarginX);
+        bHeightReduced = b.height * (1 - playerMarginY);
+        bPosX = playerContainer.position.x; // Use container position
+        bPosY = playerContainer.position.y; // Use container position
+      } else {
+        bWidthReduced = b.width * (1 - marginB);
+        bHeightReduced = b.height * (1 - marginB);
+        bPosX = b.position.x;
+        bPosY = b.position.y;
+      }
+      
+      // Check if the reduced hitboxes intersect
+      return (
+        aPosX - aWidthReduced / 2 < bPosX + bWidthReduced / 2 &&
+        aPosX + aWidthReduced / 2 > bPosX - bWidthReduced / 2 &&
+        aPosY - aHeightReduced / 2 < bPosY + bHeightReduced / 2 &&
+        aPosY + aHeightReduced / 2 > bPosY - bHeightReduced / 2
+      );
+    }
+    
+    // Helper function to visualize hitboxes (for debugging)
+    function createHitboxVisualizer() {
+      const hitboxMaterial = new THREE.LineBasicMaterial({ color: 0x00ff00 });
+      
+      return {
+        update: function(object) {
+          // Remove old visualizer if it exists
+          if (object.hitboxVisualizer) {
+            scene.remove(object.hitboxVisualizer);
+          }
+          
+          // Determine margins based on object type
+          let margin;
+          if (object === player) {
+            const widthMargin = 0.45;
+            const heightMargin = 0.35;
+            const width = object.width * (1 - widthMargin);
+            const height = object.height * (1 - heightMargin);
+            
+            // Create square geometry for the hitbox
+            const geometry = new THREE.BufferGeometry();
+            const points = [
+              new THREE.Vector3(-width/2, -height/2, 0),
+              new THREE.Vector3(width/2, -height/2, 0),
+              new THREE.Vector3(width/2, height/2, 0),
+              new THREE.Vector3(-width/2, height/2, 0),
+              new THREE.Vector3(-width/2, -height/2, 0)
+            ];
+            geometry.setFromPoints(points);
+            
+            // Create the line
+            const line = new THREE.Line(geometry, hitboxMaterial);
+            line.position.copy(object.position);
+            line.position.z = 1;
+            
+            // Store on object and add to scene
+            object.hitboxVisualizer = line;
+            scene.add(line);
+          } else {
+            margin = object.type === 'enemy' ? 0.4 : 0.3;
+            const width = object.width * (1 - margin);
+            const height = object.height * (1 - margin);
+            
+            // Create square geometry for the hitbox
+            const geometry = new THREE.BufferGeometry();
+            const points = [
+              new THREE.Vector3(-width/2, -height/2, 0),
+              new THREE.Vector3(width/2, -height/2, 0),
+              new THREE.Vector3(width/2, height/2, 0),
+              new THREE.Vector3(-width/2, height/2, 0),
+              new THREE.Vector3(-width/2, -height/2, 0)
+            ];
+            geometry.setFromPoints(points);
+            
+            // Create the line
+            const line = new THREE.Line(geometry, hitboxMaterial);
+            line.position.copy(object.position);
+            line.position.z = 1;
+            
+            // Store on object and add to scene
+            object.hitboxVisualizer = line;
+            scene.add(line);
+          }
+        }
+      };
+    }
+    
+    // Uncomment this line to enable hitbox visualization for debugging
+    // const hitboxVisualizer = createHitboxVisualizer();
+
+    // Bonus timers
+    let laserBonusTimer = 0;
+
+    // Variables to track completion of the final background
+    let hasCompletedFinalBackground = false;
+    let finalBackgroundIndex = backgroundFiles.length - 1; // Index of the final background
+    let videoPlaying = false;
+    
+    // Function to check background completion
+    function checkBackgroundCompletion() {
+      // Only check if we haven't completed the final background yet and the video hasn't played
+      if (!hasCompletedFinalBackground && !videoPlaying && !videoHasPlayed && !gameOver) {
+        // Check if the final background is completed (off-screen to the left)
+        const finalBackground = backgrounds.find(bg => bg.userData && bg.userData.fileIndex === finalBackgroundIndex);
+        
+        if (finalBackground && finalBackground.position.x < -backgroundWidth) {
+          console.log("Final background completed! Playing ending video...");
+          hasCompletedFinalBackground = true;
+          playEndingVideo();
+        }
+      }
+    }
+    
+    // Function to play the ending video
+    function playEndingVideo() {
+      // Prevent playing the video if it has already been played
+      if (videoHasPlayed || gameOver) {
+        console.log("Video has already played or game is over, not playing again");
+        return;
+      }
+      
+      // Set the permanent flag that video has played
+      videoHasPlayed = true;
+      
+      // Pause the game
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+        animationFrameId = null;
+      }
+      
+      // Stop background music
+      stopBackgroundMusic();
+      
+      // Get video element
+      const video = document.getElementById('endingVideo');
+      
+      // Show the video (initially invisible because overlay is still faded to black)
+      video.style.display = 'block';
+      
+      // Set flag
+      videoPlaying = true;
+      hasCompletedFinalBackground = true;
+      
+      // After a short delay, fade from black to reveal the video
+      setTimeout(() => {
+        // Fade out the black overlay to reveal video
+        fadeOverlay.style.opacity = '0';
+        
+        // Play the video
+        const playPromise = video.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(error => {
+            console.error("Error playing video:", error);
+            // In case of error, skip to game over
+            endGameAfterVideo();
+          });
+        }
+      }, 1000);
+      
+      // When video ends, show game over screen
+      video.onended = function() {
+        endGameAfterVideo();
+      };
+    }
+    
+    // Function to end the game after video
+    function endGameAfterVideo() {
+      // Hide the video
+      const video = document.getElementById('endingVideo');
+      video.style.display = 'none';
+      videoPlaying = false;
+      hasCompletedFinalBackground = true;  // Ensure we don't trigger the video again
+      videoHasPlayed = true; // Set the permanent flag that video has played
+      
+      // Reset fade overlay
+      fadeOverlay.style.opacity = '0';
+      fadeInProgress = false;
+      
+      // Handle game over - force game over even if player has lives left, and mark as a win
+      endGame(true, true);
+    }
+
+    // Game loop
+    function animate(time) {
+      if (gameOver) return;
+      
+      // If respawning, just render the scene but don't update game state
+      if (isRespawning) {
+        renderer.render(scene, camera);
+        animationFrameId = requestAnimationFrame(animate);
+        return;
+      }
+
+      // Reset animation frame ID when a new frame starts
+      animationFrameId = null;
+      
+      if (gameStartTime === 0) {
+        gameStartTime = time;
+        // Give initial upward velocity at start
+        playerVelocity = flapStrength;
+        // Set normal game speed for backgrounds
+        backgroundSpeed = 2;
+      }
+
+      // Update player
+      playerVelocity -= gravity;
+      playerContainer.position.y += playerVelocity; // Update container position instead of sprite
+      
+      // Only check boundaries after a short grace period
+      if (time - gameStartTime > 1000) {
+        // Check bottom boundary - keep this sensitive to provide floor challenge
+        const bottomBoundary = -window.innerHeight / 2 + 20;
+        if (playerContainer.position.y < bottomBoundary) {
+          console.log("Hit bottom boundary");
+          endGame();
+          return;
+        }
+        
+        // Check top boundary - only trigger when completely off-screen
+        // Calculate how far the player can go before being completely off-screen
+        // Player.position.y is at the center, so we need to add half height to get to the bottom edge
+        const playerBottomEdge = playerContainer.position.y - player.height / 2;
+        const screenTopEdge = window.innerHeight / 2;
+        
+        // Only die when the bottom edge of the player is above the top edge of the screen
+        if (playerBottomEdge > screenTopEdge) {
+          console.log("Completely beyond top boundary");
+          endGame();
+          return;
+        }
+      }
+
+      // Update background with continuous scrolling
+      updateBackgrounds(backgroundSpeed);
+      
+      // Check if player has completed the final background
+      if (!gameOver) {  // Only check if the game is not already over
+        checkBackgroundCompletion();
+      }
+      
+      // Update player texture based on laser count
+      updatePlayerTexture();
+      
+      // Update laser beams and explosions
+      updateLaserBeams();
+
+      // Check if full power mode should end
+      if (fullPowerMode) {
+        if (Date.now() > fullPowerTimer) {
+          console.log("FULL POWER MODE ENDED");
+          fullPowerMode = false;
+          // Reset laser count to zero after full power mode ends
+          laserCount = 0;
+          updatePlayerTexture(); // Update the player's eye glow texture
+        } else {
+          // Fire all lasers while in full power mode
+          fireAllLasers();
+        }
+      }
+
+      // Update collectibles
+      for (let i = collectibles.length - 1; i >= 0; i--) {
+        const c = collectibles[i];
+        c.position.x -= 3;
+        if (c.position.x < -window.innerWidth / 2) {
+          scene.remove(c);
+          collectibles.splice(i, 1);
+        } else if (checkCollision(player, c)) {
+          if (c.type === 'pizza') {
+            // Pizza now gives retries
+            retryCount++;
+            updateRetryDisplay();
+            score += 10; // Each pizza is still worth 10 points
+            tryPlaySound('moltoBene');
+            // Show "Molto Bene!"
+            showMoltoBene();
+            scene.remove(c);
+            collectibles.splice(i, 1);
+          } else if (c.type === 'bitcoin') {
+            laserCount++;
+            console.log("Bitcoin collected, new laserCount:", laserCount);
+            tryPlaySound('collectBitcoin');
+            scene.remove(c);
+            collectibles.splice(i, 1);
+            
+            if (laserCount >= 3) {
+              // Activate full power mode when 3rd bitcoin is collected
+              activateFullPower();
+            } else {
+              // Just update the texture for normal laser power
+              updatePlayerTexture();
+            }
+          }
+        }
+      }
+
+      // Update enemies
+      for (let i = enemies.length - 1; i >= 0; i--) {
+        const e = enemies[i];
+        e.position.x -= 5;
+        if (e.position.x < -window.innerWidth / 2) {
+          scene.remove(e);
+          enemies.splice(i, 1);
+        } else if (fullPowerMode && e.position.x < triggerX + 200) {
+          // During full power, enemies are automatically destroyed when they get close
+          createExplosion(e.position, 0xff3300);
+            scene.remove(e);
+          enemies.splice(i, 1);
+          score += 20;
+        } else if (e.position.x < triggerX && e.position.x > playerContainer.position.x && !fullPowerMode && !laserBonusActive) {
+          // Only target enemies that are in front of the player (to the right)
+          if (laserCount > 0) {
+            // Always use the right-most available eye
+            let eyeToUse;
+            
+            // Debug info
+            console.log("Enemy target: Current laser count =", laserCount);
+            
+            // This ensures we use the right-most available eye based on laser count
+            if (laserCount >= 3) {
+              console.log("Using RIGHT eye (2)");
+              eyeToUse = 2; // Right eye
+            } else if (laserCount >= 2) {
+              console.log("Using MIDDLE eye (1)");
+              eyeToUse = 1; // Middle eye
+            } else {
+              console.log("Using LEFT eye (0)");
+              eyeToUse = 0; // Left eye
+            }
+                        
+            // Shoot laser from the specific eye
+            shootLaserAt(e, eyeToUse);
+            
+            // Decrement laser count after shooting
+            laserCount--;
+            console.log("Laser count after shooting:", laserCount);
+            
+            updatePlayerTexture(); // Update the player's eye glow texture
+            scene.remove(e);
+            enemies.splice(i, 1);
+            score += 20;
+          } else if (checkCollision(player, e)) {
+            endGame();
+          }
+        } else if (checkCollision(player, e)) {
+          endGame();
+        }
+      }
+
+      // Update obstacles
+      for (let i = obstacles.length - 1; i >= 0; i--) {
+        const o = obstacles[i];
+        o.position.x -= 3;
+        if (o.position.x < -window.innerWidth / 2) {
+          scene.remove(o);
+          obstacles.splice(i, 1);
+        } else if (fullPowerMode && o.position.x < triggerX + 200) {
+          // During full power, obstacles are automatically destroyed when they get close
+          createExplosion(o.position, 0xff3300);
+          scene.remove(o);
+          obstacles.splice(i, 1);
+          score += 20;
+        } else if (o.position.x < triggerX && o.position.x > playerContainer.position.x && laserCount > 0 && !fullPowerMode && !laserBonusActive) {
+          // Only target obstacles that are in front of the player (to the right)
+          // Always use the right-most available eye
+          let eyeToUse;
+          
+          // Debug info
+          console.log("Obstacle target: Current laser count =", laserCount);
+            
+          // This ensures we use the right-most available eye based on laser count
+          if (laserCount >= 3) {
+            console.log("Using RIGHT eye (2)");
+            eyeToUse = 2; // Right eye
+          } else if (laserCount >= 2) {
+            console.log("Using MIDDLE eye (1)");
+            eyeToUse = 1; // Middle eye
+          } else {
+            console.log("Using LEFT eye (0)");
+            eyeToUse = 0; // Left eye
+          }
+          
+          // Shoot laser from the specific eye
+          shootLaserAt(o, eyeToUse);
+          
+          // Decrement laser count after shooting
+          laserCount--;
+          console.log("Laser count after shooting:", laserCount);
+          
+          updatePlayerTexture(); // Update the player's eye glow texture
+          scene.remove(o);
+          obstacles.splice(i, 1);
+          score += 20;
+        } else if (checkCollision(player, o)) {
+          endGame();
+        }
+      }
+
+      // Update bonuses
+      if (laserBonusActive && time > laserBonusTimer) {
+        laserBonusActive = false;
+        laserCount = 0; // Reset laser count after bonus expires
+        updatePlayerTexture(); // Update the player's eye glow texture
+      }
+
+      // Update score
+      score += 0.1; // Base score increment
+      
+      // Update UI
+      updateUI();
+
+      // Spawn new objects
+      updateSpawns(time / 1000);
+
+      // Update the Molto Bene animation
+      updateMoltoBene();
+
+      renderer.render(scene, camera);
+      animationFrameId = requestAnimationFrame(animate);
+    }
+
+    // Input handling
+    function onFlap(event) {
+      // Don't respond to clicks on game over screen elements
+      if (gameOver && (
+        event.target.closest('#game-over') || 
+        event.target.id === 'player-name-input' || 
+        event.target.id === 'save-score-btn'
+      )) {
+        return; // Do nothing when clicking on game over screen elements
+      }
+      
+      // Block ALL clicks when game over is shown, except for UI controls
+      if (gameOver) {
+        return; // Block clicks when game over
+      }
+      
+      if (!gameActive) return;
+      
+      if (!gameOver) {
+        playerVelocity = flapStrength;
+      } else {
+        restartGame();
+      }
+    }
+    window.addEventListener('click', onFlap);
+    window.addEventListener('touchstart', onFlap);
+    window.addEventListener('keydown', function(e) {
+      // Prevent space key from triggering flap when input field is focused
+      if (document.activeElement === document.getElementById('player-name-input') && e.code === 'Space') {
+        return;
+      }
+      if (e.code === 'Space') onFlap(e);
+    });
+    
+    // Add initialization for game over UI elements
+    document.addEventListener('DOMContentLoaded', function() {
+      // Add event listeners to game over elements to prevent propagation
+      const gameOverElement = document.getElementById('game-over');
+      gameOverElement.addEventListener('click', function(e) {
+        e.stopPropagation();
+      });
+      
+      // Ensure the buttons in the game over screen work without triggering flap
+      document.getElementById('retry-button').addEventListener('click', function(e) {
+        e.stopPropagation();
+        restartGame();
+      });
+      
+      document.getElementById('main-menu-button').addEventListener('click', function(e) {
+        e.stopPropagation();
+        showStartScreen();
+      });
+      
+      document.getElementById('save-score-btn').addEventListener('click', function(e) {
+        e.stopPropagation();
+        savePlayerScore();
+      });
+      
+      // Prevent the input field from triggering flap
+      document.getElementById('player-name-input').addEventListener('click', function(e) {
+        e.stopPropagation();
+      });
+      
+      document.getElementById('player-name-input').addEventListener('keydown', function(e) {
+        // Prevent keypresses in the input from triggering game actions
+        e.stopPropagation();
+      });
+    });
+
+    // Game over
+    function endGame(forceGameOver = false, isVictory = false) {
+      if (retryCount > 0 && !forceGameOver) {
+        // If we have retries and not forcing game over, use one and respawn
+        respawnPlayer();
+      } else {
+        // No retries left or forcing game over, go to game over screen
+      gameOver = true;
+        backgroundSpeed = 0.2; // Slow down background
+        
+        // Switch music to game over theme
+        stopBackgroundMusic();
+        playBackgroundMusic('gameOverMusic');
+        
+        // Show final score on game over screen
+        const finalScore = Math.floor(score);
+        document.getElementById('final-score').textContent = finalScore;
+        
+        // Enable name input for new score
+        document.getElementById('player-name-form').style.display = 'block';
+        
+        // Store current score temporarily for the save function
+        localStorage.setItem('tempScore', finalScore.toString());
+        console.log("Stored temp score:", finalScore);
+        
+        // Show current leaderboard without adding new score yet
+        displayLeaderboard();
+        
+        // Show game over screen with appropriate title based on victory or defeat
+      document.getElementById('game-over').style.display = 'block';
+        
+        // Change the title image based on win/loss condition
+        const gameOverImg = document.querySelector('#game-over img');
+        if (isVictory) {
+          // Use the GPP.png image for victory screen
+          if (gameOverImg) {
+            // Set the image source first
+            gameOverImg.src = "Assets/Visual/GPP.png";
+            gameOverImg.alt = "To The Moon!";
+            gameOverImg.classList.add('victory');
+            
+            // Create a hyperlink around the image
+            const parentElement = gameOverImg.parentNode;
+            
+            // Check if the image is not already wrapped in a link
+            if (parentElement.tagName !== 'A') {
+              // Create the anchor element
+              const linkElement = document.createElement('a');
+              linkElement.href = "https://globalpizza.party/"; // Set the target URL
+              linkElement.target = "_blank"; // Open in new tab
+              linkElement.style.display = "block";
+              linkElement.style.cursor = "pointer";
+              
+              // Insert the link before the image
+              parentElement.insertBefore(linkElement, gameOverImg);
+              
+              // Move the image inside the link
+              linkElement.appendChild(gameOverImg);
+            }
+            
+            // Remove any text overlay if it exists
+            const existingOverlay = document.querySelector('#game-over .text-overlay');
+            if (existingOverlay) {
+              existingOverlay.remove();
+            }
+          }
+        } else {
+          // Reset to default game over image
+          if (gameOverImg) {
+            // If the image is wrapped in a link, unwrap it
+            const parentElement = gameOverImg.parentNode;
+            if (parentElement.tagName === 'A') {
+              const grandParentElement = parentElement.parentNode;
+              grandParentElement.insertBefore(gameOverImg, parentElement);
+              
+              // Remove the link element and any added text
+              parentElement.remove();
+            }
+            
+            // Set the game over image
+            gameOverImg.src = "Assets/Visual/Game Over.png";
+            gameOverImg.alt = "Game Over";
+            gameOverImg.classList.remove('victory');
+            
+            // Remove any text overlay if it exists
+            const existingOverlay = document.querySelector('#game-over .text-overlay');
+            if (existingOverlay) {
+              existingOverlay.remove();
+            }
+          }
+        }
+        
+        document.getElementById('instructions').style.display = 'none';
+        
+        // Stop animation frame to prevent further updates
+        if (animationFrameId) {
+          cancelAnimationFrame(animationFrameId);
+          animationFrameId = null;
+        }
+      }
+    }
+    
+    // Save player score with name
+    function savePlayerScore() {
+      const playerName = document.getElementById('player-name-input').value.trim() || 'Anon';
+      const finalScore = parseInt(localStorage.getItem('tempScore') || '0');
+      
+      console.log(`Saving score for ${playerName}: ${finalScore}`);
+      
+      // Hide the name input form after saving
+      document.getElementById('player-name-form').style.display = 'none';
+      
+      // Reset any existing leaderboard data if it's not in correct format
+      const existingData = localStorage.getItem('bitcoinPizzaLeaderboard');
+      if (existingData) {
+        try {
+          const parsed = JSON.parse(existingData);
+          if (!Array.isArray(parsed) || parsed.length > 0 && (!parsed[0].name || parsed[0].score === undefined)) {
+            console.log("Resetting corrupted leaderboard data");
+            localStorage.removeItem('bitcoinPizzaLeaderboard');
+          }
+        } catch (e) {
+          console.error("Error parsing leaderboard data:", e);
+          localStorage.removeItem('bitcoinPizzaLeaderboard');
+        }
+      }
+      
+      // Update leaderboard with name and score
+      updateLeaderboard(playerName, finalScore);
+    }
+    
+    // Leaderboard functionality
+    function updateLeaderboard(playerName, newScore) {
+      console.log(`Updating leaderboard with ${playerName}: ${newScore}`);
+      
+      // Get stored leaderboard or create empty array
+      let leaderboard = [];
+      try {
+        const stored = localStorage.getItem('bitcoinPizzaLeaderboard');
+        if (stored) {
+          leaderboard = JSON.parse(stored);
+          if (!Array.isArray(leaderboard)) {
+            console.log("Stored leaderboard is not an array, resetting");
+            leaderboard = [];
+          }
+        }
+      } catch (e) {
+        console.error("Error loading leaderboard:", e);
+      }
+      
+      console.log("Current leaderboard:", leaderboard);
+      
+      // Add new score with name
+      const newEntry = {
+        name: playerName,
+        score: newScore
+      };
+      console.log("Adding new entry:", newEntry);
+      leaderboard.push(newEntry);
+      
+      // Sort in descending order by score
+      leaderboard.sort((a, b) => {
+        // Ensure we're comparing numbers
+        const scoreA = typeof a.score === 'number' ? a.score : 0;
+        const scoreB = typeof b.score === 'number' ? b.score : 0;
+        return scoreB - scoreA;
+      });
+      
+      // Limit to top 5
+      leaderboard = leaderboard.slice(0, 5);
+      console.log("Sorted and trimmed leaderboard:", leaderboard);
+      
+      // Save back to localStorage
+      localStorage.setItem('bitcoinPizzaLeaderboard', JSON.stringify(leaderboard));
+      
+      // Display updated leaderboard
+      displayLeaderboard(playerName, newScore);
+    }
+    
+    // Display leaderboard
+    function displayLeaderboard(highlightName, highlightScore) {
+      console.log("Displaying leaderboard, highlighting:", highlightName, highlightScore);
+      
+      // Get stored leaderboard
+      let leaderboard = [];
+      try {
+        const stored = localStorage.getItem('bitcoinPizzaLeaderboard');
+        if (stored) {
+          leaderboard = JSON.parse(stored);
+          if (!Array.isArray(leaderboard)) {
+            console.log("Stored leaderboard is not an array for display");
+            leaderboard = [];
+          }
+        }
+      } catch (e) {
+        console.error("Error loading leaderboard for display:", e);
+      }
+      
+      console.log("Display leaderboard data:", leaderboard);
+      
+      // Update display
+      const list = document.getElementById('leaderboard-list');
+      list.innerHTML = ''; // Clear previous entries
+      
+      // If leaderboard is empty, add placeholder entries
+      if (leaderboard.length === 0) {
+        for (let i = 0; i < 5; i++) {
+          const li = document.createElement('li');
+          li.innerHTML = `
+            <span class="rank">#${i + 1}</span>
+            <span class="name">---</span>
+            <span class="score">0</span>
+          `;
+          list.appendChild(li);
+        }
+        return;
+      }
+      
+      // Add each entry to the list
+      leaderboard.forEach((entry, index) => {
+        // Ensure entry has correct properties
+        const name = entry && typeof entry.name === 'string' ? entry.name : '---';
+        const score = entry && typeof entry.score === 'number' ? entry.score : 0;
+        
+        const li = document.createElement('li');
+        li.innerHTML = `
+          <span class="rank">#${index + 1}</span>
+          <span class="name">${name}</span>
+          <span class="score">${score}</span>
+        `;
+        
+        // Highlight the new score if it matches
+        if (highlightName && name === highlightName && score === highlightScore) {
+          li.classList.add('highlight');
+        }
+        
+        list.appendChild(li);
+      });
+    }
+    
+    // New function to show the start screen
+    function showStartScreen() {
+      // Hide game over screen
+      document.getElementById('game-over').style.display = 'none';
+      
+      // Show start screen
+      document.getElementById('start-screen').style.display = 'flex';
+      
+      // Switch to menu music
+      stopBackgroundMusic();
+      playBackgroundMusic('menuMusic');
+      
+      // Reset game state
+      resetGameState();
+    }
+    
+    // Reset game state without starting animation
+    function resetGameState() {
+      // Reset all game variables
+      gameOver = false;
+      isRespawning = false;
+      score = 0;
+      retryCount = 0;
+      updateRetryDisplay();
+      laserCount = 0;
+      laserBonusActive = false;
+      playerContainer.position.set(100, 0, 0); // Reset container, not sprite
+      playerVelocity = 0;
+      gameStartTime = 0;
+      backgroundSpeed = 0.5; // Slow for start screen
+      
+      // Reset player texture
+      updatePlayerTexture();
+      
+      // Remove all game objects
+      enemies.forEach(e => scene.remove(e));
+      obstacles.forEach(o => scene.remove(o));
+      collectibles.forEach(c => scene.remove(c));
+      enemies.length = 0;
+      obstacles.length = 0;
+      collectibles.length = 0;
+      
+      // Update UI
+      updateUI();
+    }
+    
+    // Restart game
+    function restartGame() {
+      // Clear any pending animation frame first
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+        animationFrameId = null;
+      }
+      
+      // Hide any UI overlays
+      document.getElementById('game-over').style.display = 'none';
+      document.getElementById('respawn-message').style.display = 'none';
+      document.getElementById('start-screen').style.display = 'none';
+      document.getElementById('instructions').style.display = 'block';
+      
+      // Reset game state
+      resetGameState();
+      
+      // Reset player position
+      playerContainer.position.set(100, 0, 0);
+      playerVelocity = flapStrength; // Give an initial upward boost
+      
+      // Reset background positions to ensure proper scroll restart
+      resetBackgroundPositions();
+      
+      // Set the game as active
+      gameActive = true;
+      gameOver = false;
+      
+      // Reset time and speed values
+      gameStartTime = 0;
+      backgroundSpeed = 2;
+      
+      // Make sure player texture is updated
+      updatePlayerTexture();
+      
+      // Start animation loop
+      animationFrameId = requestAnimationFrame(animate);
+      
+      console.log("Game restarted");
+    }
+    
+    // Function to reset background positions
+    function resetBackgroundPositions() {
+      console.log("Resetting background positions...");
+      
+      // Ensure backgrounds are properly spaced
+      for (let i = 0; i < backgrounds.length; i++) {
+        if (i === 0) {
+          // First background should be centered on screen
+          backgrounds[i].position.x = 0;
+        } else {
+          // Position subsequent backgrounds to the right
+          backgrounds[i].position.x = i * backgroundWidth;
+        }
+        console.log(`Background ${i}: position set to ${backgrounds[i].position.x}`);
+      }
+      
+      // Force the first background to be visible and current
+      currentBackgroundIndex = 0;
+      
+      // Update which background is currently visible
+      checkBackgroundVisibility();
+    }
+
+    // Start the render loop without gameplay
+    function startRenderLoop() {
+      // Ensure background is visible
+      ensureBackgroundsVisible();
+      
+      // Animate background even before game starts
+      updateBackgrounds(0.5); // Slower speed before game starts
+      
+      renderer.render(scene, camera);
+      requestAnimationFrame(startRenderLoop);
+    }
+    
+    // Initialize the scene
+    startRenderLoop();
+    
+    // Start game button - remove potentially conflicting handler
+    // document.getElementById('start-button').addEventListener('click', startGame);
+    
+    function startGame() {
+      document.getElementById('start-screen').style.display = 'none';
+      gameActive = true;
+      
+      // Stop menu music and play gameplay music
+      stopBackgroundMusic();
+      playBackgroundMusic('gameMusic');
+      
+      // Try to enable audio when game starts
+      enableAudio();
+      
+      // Ensure backgrounds are properly positioned before starting game
+      ensureBackgroundsVisible();
+      backgroundSpeed = 2;
+      
+      updatePlayerTexture(); // Ensure correct player texture is set
+      
+      animationFrameId = requestAnimationFrame(animate);
+    }
+
+    // Function to activate full power mode
+    function activateFullPower() {
+      console.log("ACTIVATING FULL POWER MODE!");
+      fullPowerMode = true;
+      fullPowerTimer = Date.now() + fullPowerDuration;
+      
+      // Clear existing enemies for dramatic effect
+      enemies.forEach(e => {
+        // Create explosion at enemy position
+        createExplosion(e.position, 0xff3300);
+        scene.remove(e);
+      });
+      enemies.length = 0;
+      
+      // Update player texture to full power
+      updatePlayerTexture();
+      
+      // Play all three zap sounds for dramatic effect
+      setTimeout(() => playDirectSound('zap1'), 100);
+      setTimeout(() => playDirectSound('zap2'), 300);
+      setTimeout(() => playDirectSound('zap3'), 500);
+    }
+
+    // Function to fire all three lasers during full power mode
+    function fireAllLasers() {
+      // Don't fire too frequently
+      const now = Date.now();
+      if (now < lastLaserFireTime + laserFireInterval) return;
+      
+      lastLaserFireTime = now;
+      
+      // Fire random lasers for visual effect when no target is available
+      if (enemies.length === 0 && obstacles.length === 0) {
+        // Create random beam directions for visual effect
+        for (let i = 0; i < 3; i++) {
+          // Create a fake target ahead of the player
+          const fakeTarget = {
+            position: new THREE.Vector3(
+              playerContainer.position.x + 500,
+              playerContainer.position.y + Math.random() * 200 - 100,
+              0
+            )
+          };
+          
+          // Fire from each eye
+          shootLaserAt(fakeTarget, i);
+        }
+      } else {
+        // Find closest enemy or obstacle
+        let closestTarget = null;
+        let closestDistance = Infinity;
+        
+        // Check enemies
+        enemies.forEach(e => {
+          if (e.position.x > playerContainer.position.x) { // Only target enemies in front
+            const distance = e.position.distanceTo(playerContainer.position);
+            if (distance < closestDistance) {
+              closestDistance = distance;
+              closestTarget = e;
+            }
+          }
+        });
+        
+        // Check obstacles if no enemy found
+        if (!closestTarget) {
+          obstacles.forEach(o => {
+            if (o.position.x > playerContainer.position.x) { // Only target obstacles in front
+              const distance = o.position.distanceTo(playerContainer.position);
+              if (distance < closestDistance) {
+                closestDistance = distance;
+                closestTarget = o;
+              }
+            }
+          });
+        }
+        
+        // If we found a target, fire all three lasers at it
+        if (closestTarget) {
+          for (let i = 0; i < 3; i++) {
+            shootLaserAt(closestTarget, i);
+          }
+          
+          // Destroy the target
+          if (enemies.includes(closestTarget)) {
+            const index = enemies.indexOf(closestTarget);
+            scene.remove(closestTarget);
+            enemies.splice(index, 1);
+            score += 20;
+          } else if (obstacles.includes(closestTarget)) {
+            const index = obstacles.indexOf(closestTarget);
+            scene.remove(closestTarget);
+            obstacles.splice(index, 1);
+            score += 20;
+          }
+        }
+      }
+    }
+
+    // Explosion system using particles
+    function createExplosionParticle() {
+      const geometry = new THREE.SphereGeometry(1, 8, 8);
+      const material = new THREE.MeshBasicMaterial({
+        color: 0xff5500,
+        transparent: true,
+        opacity: 1
+      });
+      
+      const particle = new THREE.Mesh(geometry, material);
+      particle.visible = false;
+      particle.userData = {
+        active: false,
+        velocity: new THREE.Vector3(),
+        lifetime: 0,
+        scale: 1
+      };
+      
+      scene.add(particle);
+      return particle;
+    }
+    
+    // Initialize the explosion pool
+    function initExplosions() {
+      for (let i = 0; i < maxExplosions; i++) {
+        for (let j = 0; j < 20; j++) { // 20 particles per explosion
+          explosionPool.push(createExplosionParticle());
+        }
+      }
+    }
+    
+    // Trigger explosion at specific position
+    function createExplosion(position, color = 0xff3300) {
+      // Find 20 inactive particles for this explosion
+      const particles = explosionPool.filter(p => !p.userData.active).slice(0, 20);
+      if (particles.length < 20) return; // Not enough particles available
+      
+      // Define fire colors: red, orange, yellow
+      const fireColors = [
+        0xff0000, // Red
+        0xff4500, // Orange-red
+        0xff8300, // Orange
+        0xffcc00, // Orange-yellow
+        0xffff00  // Yellow
+      ];
+      
+      // Activate all particles in this group
+      particles.forEach((particle, index) => {
+        // Position at explosion center
+        particle.position.copy(position);
+        
+        // Random direction and speed
+        const speed = Math.random() * 5 + 3;
+        const angle = Math.random() * Math.PI * 2;
+        const elevation = Math.random() * Math.PI - Math.PI/2;
+        
+        // Calculate 3D direction
+        particle.userData.velocity.set(
+          speed * Math.cos(angle) * Math.cos(elevation),
+          speed * Math.sin(elevation),
+          speed * Math.sin(angle) * Math.cos(elevation)
+        );
+        
+        // Random size
+        const scale = Math.random() * 5 + 3;
+        particle.scale.set(scale, scale, scale);
+        particle.userData.scale = scale;
+        
+        // Random lifetime
+        particle.userData.lifetime = Math.random() * 30 + 15; // 15-45 frames (0.25-0.75 seconds)
+        
+        // Set one of the fire colors randomly
+        const selectedColor = fireColors[Math.floor(Math.random() * fireColors.length)];
+        if (particle.material.color) {
+          // Convert hex color to RGB components
+          const r = (selectedColor >> 16 & 255) / 255;
+          const g = (selectedColor >> 8 & 255) / 255;
+          const b = (selectedColor & 255) / 255;
+          
+          // Apply slight random variation to make each particle unique
+          particle.material.color.setRGB(
+            r * (0.9 + Math.random() * 0.2),
+            g * (0.9 + Math.random() * 0.2),
+            b * (0.9 + Math.random() * 0.2)
+          );
+        }
+        
+        // Activate
+        particle.visible = true;
+        particle.userData.active = true;
+      });
+    }
+    
+    // Update all active explosion particles
+    function updateExplosions() {
+      explosionPool.forEach(particle => {
+        if (particle.userData.active) {
+          // Update position based on velocity
+          particle.position.add(particle.userData.velocity);
+          
+          // Slow down (air resistance)
+          particle.userData.velocity.multiplyScalar(0.95);
+          
+          // Reduce lifetime
+          particle.userData.lifetime--;
+          
+          // Shrink particle as lifetime decreases
+          const lifeRatio = particle.userData.lifetime / 30;
+          const currentScale = particle.userData.scale * lifeRatio;
+          particle.scale.set(currentScale, currentScale, currentScale);
+          
+          // Update opacity based on lifetime
+          particle.material.opacity = lifeRatio;
+          
+          // Deactivate if lifetime is over
+          if (particle.userData.lifetime <= 0) {
+            particle.visible = false;
+            particle.userData.active = false;
+          }
+        }
+      });
+    }
+
+    // Create and load all background images
+    function setupBackgrounds() {
+      // Create a fallback texture
+      const fallbackTexture = createFallbackTexture('skyblue');
+      
+      // First, create the initial background positioned at the center of the screen
+      const firstBgMaterial = new THREE.SpriteMaterial({
+        map: fallbackTexture,
+        transparent: true
+      });
+      
+      const firstBg = new THREE.Sprite(firstBgMaterial);
+      firstBg.scale.set(backgroundWidth, backgroundHeight, 1);
+      firstBg.position.set(0, 0, -1); // Centered on screen
+      firstBg.userData = { 
+        fileIndex: 0,
+        fileName: backgroundFiles[0]
+      }; // Store the index and name of the background file
+      scene.add(firstBg);
+      backgrounds.push(firstBg);
+      
+      // Load texture for first background with better error handling
+      textureLoader.load(
+        backgroundFiles[0],
+        (texture) => {
+          console.log(`✅ Successfully loaded background: ${backgroundFiles[0]}`);
+          firstBg.material.map = texture;
+          firstBg.material.needsUpdate = true;
+        },
+        undefined,
+        (err) => {
+          console.error(`❌ Error loading background: ${backgroundFiles[0]}`, err);
+          // Keep using fallback texture
+        }
+      );
+      
+      // Create the rest of the backgrounds, positioned to the right of each other
+      for (let i = 1; i < backgroundFiles.length; i++) {
+        const material = new THREE.SpriteMaterial({
+          map: fallbackTexture,
+          transparent: true
+        });
+        
+        const sprite = new THREE.Sprite(material);
+        sprite.scale.set(backgroundWidth, backgroundHeight, 1);
+        sprite.position.set(i * backgroundWidth, 0, -1); // Position to the right
+        sprite.userData = { 
+          fileIndex: i,
+          fileName: backgroundFiles[i]
+        }; // Store the index and name of the background file
+        scene.add(sprite);
+        backgrounds.push(sprite);
+        
+        // Load the actual texture with better error handling
+        textureLoader.load(
+          backgroundFiles[i],
+          (texture) => {
+            console.log(`✅ Successfully loaded background: ${backgroundFiles[i]}`);
+            sprite.material.map = texture;
+            sprite.material.needsUpdate = true;
+          },
+          undefined,
+          (err) => {
+            console.error(`❌ Error loading background: ${backgroundFiles[i]}`, err);
+            // Keep using fallback texture (blue)
+            console.log(`Using fallback color for ${backgroundFiles[i]}`);
+          }
+        );
+      }
+      
+      // Initial check of which background is visible
+      setTimeout(checkBackgroundVisibility, 500);
+    }
+
+    // Background music elements
+    let currentMusic = null;
+    let musicVolume = 0.7; // 70% volume for background music
+    let musicEnabled = true; // Flag to control music on/off
+
+    // Function to test file existence
+    function checkFileExists(url) {
+      console.log(`Testing if file exists: ${url}`);
+      
+      return new Promise((resolve, reject) => {
+        fetch(url, { method: 'HEAD' })
+          .then(response => {
+            if (response.ok) {
+              console.log(`✅ File exists: ${url}`);
+              resolve(true);
+            } else {
+              console.error(`❌ File not found: ${url} (${response.status})`);
+              resolve(false);
+            }
+          })
+          .catch(error => {
+            console.error(`❌ Error checking file: ${url}`, error);
+            resolve(false);
+          });
+      });
+    }
+    
+    // Check all audio files and log results
+    async function verifyAudioFiles() {
+      console.log("======= VERIFYING AUDIO FILES =======");
+      
+      for (const [key, path] of Object.entries(soundFiles)) {
+        const exists = await checkFileExists(path);
+        console.log(`${key}: ${exists ? "✅ Found" : "❌ Missing"} - ${path}`);
+        
+        // If file is missing, try alternative paths
+        if (!exists) {
+          // Try without Assets prefix
+          const altPath1 = path.replace('Assets/', '');
+          const exists1 = await checkFileExists(altPath1);
+          if (exists1) {
+            console.log(`Found at alternative path: ${altPath1}`);
+            soundFiles[key] = altPath1; // Update path
+          }
+          
+          // Try with different capitalization
+          const altPath2 = path.replace('Assets/Audio', 'assets/audio');
+          const exists2 = await checkFileExists(altPath2);
+          if (exists2) {
+            console.log(`Found at alternative path: ${altPath2}`);
+            soundFiles[key] = altPath2; // Update path
+          }
+        }
+      }
+      
+      console.log("======= AUDIO FILE VERIFICATION COMPLETE =======");
+    }
+    
+    // Run verification
+    verifyAudioFiles();
+
+    // Function to stop background music
+    function stopBackgroundMusic() {
+      console.log("Stopping all background music");
+      
+      // Stop the tracked current music
+      if (currentMusic) {
+        try {
+          currentMusic.pause();
+          currentMusic.currentTime = 0;
+          currentMusic = null;
+          console.log("Successfully stopped tracked background music");
+        } catch(e) {
+          console.error("Error stopping tracked music:", e);
+        }
+      }
+      
+      // Additional safety: stop any other audio elements playing music
+      const allAudio = document.querySelectorAll('audio');
+      allAudio.forEach(audio => {
+        try {
+          audio.pause();
+          audio.currentTime = 0;
+          console.log("Stopped additional audio element");
+        } catch(e) {
+          console.error("Error stopping additional audio:", e);
+        }
+      });
+      
+      // Final safety: look for any audio with our music paths
+      Object.values(soundFiles).forEach(path => {
+        // Check if there are any audio elements with this source
+        const matchingAudios = Array.from(document.querySelectorAll('audio')).filter(
+          audio => audio.src.includes(path.replace(/^Assets\//, ''))
+        );
+        
+        matchingAudios.forEach(audio => {
+          try {
+            audio.pause();
+            audio.currentTime = 0;
+            console.log(`Stopped audio playing ${path}`);
+          } catch(e) {
+            console.error(`Error stopping audio with ${path}:`, e);
+          }
+        });
+      });
+    }
+    
+    // Global array to track all music players
+    const allMusicPlayers = [];
+    
+    // Function to play background music for a specific screen
+    function playBackgroundMusic(musicType) {
+      console.log(`============= PLAYING ${musicType} =============`);
+      
+      // Always stop ALL music first
+      stopBackgroundMusic();
+      
+      if (!audioEnabled) {
+        console.log("Audio not enabled, can't play music");
+        return null;
+      }
+      
+      if (!musicEnabled) {
+        console.log("Music is disabled by user");
+        return null;
+      }
+      
+      const musicPath = soundFiles[musicType];
+      if (!musicPath) {
+        console.error(`No path defined for music type: ${musicType}`);
+        return null;
+      }
+      
+      try {
+        console.log(`Attempting to play ${musicType} from ${musicPath}`);
+        
+        // Create a new audio element for the music
+        currentMusic = new Audio(musicPath);
+        currentMusic.volume = musicVolume;
+        currentMusic.loop = true; // Loop the background music
+        
+        // Add event listeners for debugging
+        currentMusic.addEventListener('play', () => {
+          console.log(`${musicType} started playing`);
+        });
+        
+        currentMusic.addEventListener('error', (e) => {
+          console.error(`Error with ${musicType}:`, e);
+        });
+        
+        // Try to play
+        currentMusic.play()
+          .catch(e => {
+            console.error("Play failed:", e);
+          });
+          
+        return currentMusic;
+      } catch(e) {
+        console.error(`Exception with ${musicType}: ${e.message}`);
+        return null;
+      }
+    }
+
+    // Initialize the scene
+    startRenderLoop();
+    
+    // Update the DOMContentLoaded handler to properly initialize music
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log("Document loaded, setting up game...");
+      
+      // Remove any existing click handlers on the start button
+      const startButton = document.getElementById('start-button');
+      const newStartButton = startButton.cloneNode(true);
+      startButton.parentNode.replaceChild(newStartButton, startButton);
+      
+      // Set up the Start button with explicit music handling
+      newStartButton.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        // Track that user has interacted with the page
+        audioEnabled = true;
+        
+        // Start the game (this will handle music too)
+        startGame();
+      });
+      
+      // Set up event listeners for game over elements
+      setupGameOverEventListeners();
+      
+      // Try to pre-enable audio after a short delay
+      setTimeout(function() {
+        console.log("Attempting to initialize audio on page load");
+        enableAudio();
+        
+        // Explicitly try to play menu music on page load
+        playBackgroundMusic('menuMusic');
+        
+        // Add click handler to document to enable music after first interaction
+        const firstInteractionHandler = function() {
+          console.log("First user interaction detected");
+          
+          // Only play if we're on the start screen
+          if (!gameActive && !gameOver) {
+            playBackgroundMusic('menuMusic');
+          }
+          
+          // Remove this handler after first use
+          document.removeEventListener('click', firstInteractionHandler);
+          document.removeEventListener('touchstart', firstInteractionHandler);
+          document.removeEventListener('keydown', firstInteractionHandler);
+        };
+        
+        // Add handlers for first interaction
+        document.addEventListener('click', firstInteractionHandler);
+        document.addEventListener('touchstart', firstInteractionHandler);
+        document.addEventListener('keydown', firstInteractionHandler);
+      }, 500);
+    });
+    
+    // Setup event listeners for game over screen
+    function setupGameOverEventListeners() {
+      const gameOverElement = document.getElementById('game-over');
+      if (gameOverElement) {
+        gameOverElement.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      }
+      
+      const retryButton = document.getElementById('retry-button');
+      if (retryButton) {
+        retryButton.addEventListener('click', function(e) {
+          e.stopPropagation();
+          stopBackgroundMusic();
+          playBackgroundMusic('gameMusic');
+          restartGame();
+        });
+      }
+      
+      const mainMenuButton = document.getElementById('main-menu-button');
+      if (mainMenuButton) {
+        mainMenuButton.addEventListener('click', function(e) {
+          e.stopPropagation();
+          stopBackgroundMusic();
+          playBackgroundMusic('menuMusic');
+          showStartScreen();
+        });
+      }
+    }
+    
+    // Add a pre-start music function for when we click on the page anywhere
+    function playStartScreenMusicIfNeeded() {
+      if (!gameActive && !gameOver) {
+        console.log("User interaction on start screen, ensuring music is playing");
+        playBackgroundMusic('menuMusic');
+      }
+    }
+    
+    // Add click handlers to try playing music after any interaction
+    document.addEventListener('click', playStartScreenMusicIfNeeded);
+    document.addEventListener('touchstart', playStartScreenMusicIfNeeded);
+    document.addEventListener('keydown', playStartScreenMusicIfNeeded);
+
+    // Add mute/unmute button
+    const muteButton = document.createElement('button');
+    muteButton.id = 'mute-button';
+    muteButton.innerHTML = '🔊';
+    muteButton.style.position = 'absolute';
+    muteButton.style.top = '10px';
+    muteButton.style.right = '10px';
+    muteButton.style.zIndex = '1000';
+    muteButton.style.background = 'rgba(0, 0, 0, 0.5)';
+    muteButton.style.color = 'white';
+    muteButton.style.border = 'none';
+    muteButton.style.borderRadius = '5px';
+    muteButton.style.padding = '5px 10px';
+    muteButton.style.cursor = 'pointer';
+    
+    muteButton.addEventListener('click', function() {
+      musicEnabled = !musicEnabled;
+      
+      if (musicEnabled) {
+        muteButton.innerHTML = '🔊';
+        // Resume music based on current game state
+        if (gameOver) {
+          playBackgroundMusic('gameOverMusic');
+        } else if (gameActive) {
+          playBackgroundMusic('gameMusic');
+        } else {
+          playBackgroundMusic('menuMusic');
+        }
+      } else {
+        muteButton.innerHTML = '🔇';
+        stopBackgroundMusic();
+      }
+    });
+    
+    document.body.appendChild(muteButton);
+
+    // Explicit audio play function with forced user gesture
+    function forcePlayAudio(audioElement) {
+      // Create and trigger a fake user gesture event
+      const userEvent = new MouseEvent('click', {
+        view: window,
+        bubbles: true,
+        cancelable: true
+      });
+      
+      document.dispatchEvent(userEvent);
+      
+      // Now try to play the audio
+      console.log("Attempting to play audio with forced user gesture");
+      const playPromise = audioElement.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(error => {
+          console.error("Audio play failed despite user gesture:", error);
+        });
+      }
+    }
+    
+    // Create fade-to-video transition
+    function startFadeToVideo() {
+      // Don't start fade if video has already played or game is over
+      if (videoHasPlayed || gameOver) {
+        console.log("Video has already played or game is over, not starting fade");
+        return;
+      }
+      
+      console.log("🌙 Starting fade transition to video");
+      
+      // First fade to black
+      fadeOverlay.style.opacity = '1';
+      
+      // Slow down the gameplay
+      backgroundSpeed = 0.5;
+      
+      // After fade is complete, play the video
+      setTimeout(() => {
+        playEndingVideo();
+      }, 2000);
+    }
+  </script>
+
+  <!-- Add Supabase JS Client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    // Initialize Supabase client
+    const supabaseUrl = 'https://ifrwclanzakctzlaiucm.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlmcndjbGFuemFrY3R6bGFpdWNtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDczMTQzMTgsImV4cCI6MjA2Mjg5MDMxOH0.orCkZ5pLt1La6PBlUAZ8gdyBcM2ieU9K-F_U_zuYMv4';
+    const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+    
+    // Enhanced player analytics
+    let gameStartTimestamp = 0;
+    let sessionHeartbeatInterval = null;
+
+    // Generate or retrieve unique player ID
+    function getOrCreatePlayerId() {
+      let playerId = localStorage.getItem('bitcoin_pizza_player_id');
+      if (!playerId) {
+        // Generate a random ID if not exists
+        playerId = 'player_' + Math.random().toString(36).substring(2, 15);
+        localStorage.setItem('bitcoin_pizza_player_id', playerId);
+      }
+      return playerId;
+    }
+
+    // Days between two dates helper
+    function daysBetween(date1, date2) {
+      return Math.floor((date2 - date1) / (1000 * 60 * 60 * 24));
+    }
+
+    // Initialize analytics system with session tracking
+    function initializeAnalytics() {
+      // Player identification
+      const playerId = getOrCreatePlayerId();
+      
+      // Session management
+      const sessionId = 'session_' + Math.random().toString(36).substring(2, 15);
+      const currentDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+      
+      // Track session start
+      const lastSessionDate = localStorage.getItem('last_session_date');
+      const firstSessionDate = localStorage.getItem('first_session_date') || currentDate;
+      
+      // Store first session date if new player
+      if (!localStorage.getItem('first_session_date')) {
+        localStorage.setItem('first_session_date', currentDate);
+      }
+      
+      // Determine if this is a returning user
+      const isNewDaySession = lastSessionDate !== currentDate;
+      
+      // Update session data
+      localStorage.setItem('last_session_date', currentDate);
+      
+      // Track daily active user
+      if (isNewDaySession) {
+        const sessionsToday = parseInt(localStorage.getItem(`sessions_${currentDate}`) || '0');
+        localStorage.setItem(`sessions_${currentDate}`, sessionsToday + 1);
+      }
+      
+      // Calculate retention days if returning
+      if (lastSessionDate && lastSessionDate !== currentDate) {
+        const daysSinceFirstSession = daysBetween(new Date(firstSessionDate), new Date(currentDate));
+        
+        // Track retention milestones
+        if (daysSinceFirstSession === 1 || daysSinceFirstSession === 7 || daysSinceFirstSession === 30) {
+          trackGameEvent('retention', { 
+            player_id: playerId,
+            days_since_first: daysSinceFirstSession,
+            retention_milestone: `day_${daysSinceFirstSession}`
+          });
+        }
+      }
+      
+      // Track session start
+      trackGameEvent('session_start', {
+        player_id: playerId,
+        session_id: sessionId,
+        is_new_day: isNewDaySession,
+        days_since_first_session: lastSessionDate ? 
+          daysBetween(new Date(firstSessionDate), new Date(currentDate)) : 0
+      });
+      
+      // Store session ID for the duration of this session
+      sessionStorage.setItem('current_session_id', sessionId);
+      
+      // Setup heartbeat tracking for session length
+      setupSessionHeartbeat();
+      
+      // Return session details
+      return {
+        playerId,
+        sessionId,
+        isNewDaySession
+      };
+    }
+
+    // Track scene transitions
+    function trackSceneTransition(fromBackground, toBackground) {
+      const playerId = getOrCreatePlayerId();
+      const sessionId = sessionStorage.getItem('current_session_id');
+      
+      trackGameEvent('scene_transition', {
+        player_id: playerId,
+        session_id: sessionId,
+        from_scene: fromBackground,
+        to_scene: toBackground
+      });
+    }
+
+    // Track heartbeat for longer sessions
+    function setupSessionHeartbeat() {
+      // Clear any existing interval
+      if (sessionHeartbeatInterval) {
+        clearInterval(sessionHeartbeatInterval);
+      }
+      
+      // Send heartbeat every minute to track session length
+      sessionHeartbeatInterval = setInterval(() => {
+        if (gameActive) {
+          const playerId = getOrCreatePlayerId();
+          const sessionId = sessionStorage.getItem('current_session_id');
+          const currentDuration = Math.floor((Date.now() - gameStartTimestamp) / 1000);
+          
+          trackGameEvent('session_heartbeat', {
+            player_id: playerId,
+            session_id: sessionId,
+            current_duration: currentDuration,
+            current_scene: currentBackgroundIndex,
+            score: Math.floor(score)
+          });
+        }
+      }, 60000); // Every minute
+    }
+
+    // Track session end
+    function trackSessionEnd() {
+      const playerId = getOrCreatePlayerId();
+      const sessionId = sessionStorage.getItem('current_session_id');
+      if (sessionId) {
+        const sessionDuration = Math.floor((Date.now() - gameStartTimestamp) / 1000);
+        trackGameEvent('session_end', {
+          player_id: playerId,
+          session_id: sessionId,
+          duration_seconds: sessionDuration
+        });
+      }
+    }
+
+    // Override the original savePlayerScore function
+    const originalSavePlayerScore = savePlayerScore;
+    
+    // Save player score to Supabase
+    savePlayerScore = async function() {
+      const playerName = document.getElementById('player-name-input').value.trim() || 'Anon';
+      const finalScore = parseInt(localStorage.getItem('tempScore') || '0');
+      const playerId = getOrCreatePlayerId();
+      
+      console.log(`Saving score for ${playerName}: ${finalScore} to Supabase`);
+      
+      try {
+        // Save to Supabase
+        const { data, error } = await supabaseClient
+          .from('leaderboard')
+          .insert([
+            { player_name: playerName, score: finalScore }
+          ]);
+          
+        if (error) {
+          console.error("Supabase error:", error);
+          throw error;
+        }
+        
+        console.log("Score saved successfully to Supabase");
+        
+        // Hide the name input form after saving
+        document.getElementById('player-name-form').style.display = 'none';
+        
+        // Display updated leaderboard with the new score
+        fetchAndDisplayLeaderboard(playerName, finalScore);
+        
+        // Also track this as a game statistic
+        trackGameEvent('score_saved', { 
+          player_name: playerName, 
+          score: finalScore,
+          player_id: playerId
+        });
+      } catch (err) {
+        console.error("Error saving to Supabase, falling back to localStorage:", err);
+        // Fallback to original localStorage implementation
+        originalSavePlayerScore.call(this, playerName, finalScore);
+      }
+    };
+    
+    // New function to fetch and display leaderboard from Supabase
+    async function fetchAndDisplayLeaderboard(highlightName = null, highlightScore = null) {
+      console.log("Fetching leaderboard from Supabase...");
+      
+      try {
+        // Fetch top 5 scores from Supabase
+        const { data: leaderboard, error } = await supabaseClient
+          .from('leaderboard')
+          .select('player_name, score')
+          .order('score', { ascending: false })
+          .limit(5);
+        
+        if (error) {
+          console.error("Supabase fetch error:", error);
+          throw error;
+        }
+        
+        console.log("Leaderboard data from Supabase:", leaderboard);
+        
+        // Update display
+        const list = document.getElementById('leaderboard-list');
+        list.innerHTML = ''; // Clear previous entries
+        
+        if (!leaderboard || leaderboard.length === 0) {
+          console.log("No leaderboard data, showing placeholders");
+          // If no scores yet, show placeholders
+          for (let i = 0; i < 5; i++) {
+            const li = document.createElement('li');
+            li.innerHTML = `
+              <span class="rank">#${i + 1}</span>
+              <span class="name">---</span>
+              <span class="score">0</span>
+            `;
+            list.appendChild(li);
+          }
+          return;
+        }
+        
+        // Add each entry to the list
+        leaderboard.forEach((entry, index) => {
+          const li = document.createElement('li');
+          li.innerHTML = `
+            <span class="rank">#${index + 1}</span>
+            <span class="name">${entry.player_name}</span>
+            <span class="score">${entry.score}</span>
+          `;
+          
+          // Highlight the new score if it matches
+          if (highlightName && entry.player_name === highlightName && entry.score === highlightScore) {
+            li.classList.add('highlight');
+          }
+          
+          list.appendChild(li);
+        });
+        
+      } catch (err) {
+        console.error("Error with Supabase leaderboard, using localStorage instead:", err);
+        // Fall back to original localStorage method
+        console.log("Falling back to local leaderboard display");
+        if (window.updateLeaderboard && window.displayLeaderboard) {
+          if (highlightName && highlightScore) {
+            updateLeaderboard(highlightName, highlightScore);
+          } else {
+            displayLeaderboard();
+          }
+        }
+      }
+    }
+    
+    // Override displayLeaderboard to use Supabase
+    const originalDisplayLeaderboard = displayLeaderboard;
+    displayLeaderboard = function(highlightName, highlightScore) {
+      fetchAndDisplayLeaderboard(highlightName, highlightScore);
+    };
+    
+    // Game statistics tracking function
+    async function trackGameEvent(eventType, data = {}) {
+      // Add player_id to all events if not already present
+      if (!data.player_id) {
+        data.player_id = getOrCreatePlayerId();
+      }
+      
+      console.log(`Tracking event: ${eventType}`, data);
+      
+      try {
+        const { error } = await supabaseClient
+          .from('game_stats')
+          .insert([{
+            event_type: eventType,
+            data: data
+          }]);
+          
+        if (error) console.error("Error tracking event:", error);
+      } catch (err) {
+        console.error("Error tracking game event:", err);
+      }
+    }
+    
+    // Enhanced game start tracking
+    const originalStartGame = startGame;
+    startGame = function() {
+      // Track session start time
+      gameStartTimestamp = Date.now();
+      
+      // Initialize analytics on first game start if not already done
+      const analytics = initializeAnalytics();
+      
+      trackGameEvent('game_start', {
+        player_id: analytics.playerId,
+        session_id: analytics.sessionId,
+        current_scene: currentBackgroundIndex
+      });
+      
+      originalStartGame.apply(this, arguments);
+    };
+    
+    // Enhanced game end tracking
+    const originalEndGame = endGame;
+    endGame = function(forceGameOver, isVictory) {
+      if (gameOver || forceGameOver || retryCount <= 0) {
+        const playerId = getOrCreatePlayerId();
+        const sessionId = sessionStorage.getItem('current_session_id');
+        const gameEndTimestamp = Date.now();
+        const durationSeconds = Math.floor((gameEndTimestamp - gameStartTimestamp) / 1000);
+        
+        // Track progress through backgrounds
+        const maxBackgroundReached = Math.max(
+          parseInt(localStorage.getItem('max_background_reached') || '0'),
+          currentBackgroundIndex
+        );
+        localStorage.setItem('max_background_reached', maxBackgroundReached);
+        
+        const completionPercentage = ((currentBackgroundIndex + 1) / backgroundFiles.length) * 100;
+        
+        trackGameEvent('game_end', {
+          player_id: playerId,
+          session_id: sessionId,
+          score: Math.floor(score), 
+          victory: isVictory || false,
+          duration_seconds: durationSeconds,
+          max_background: currentBackgroundIndex,
+          completion_percentage: completionPercentage.toFixed(2),
+          backgrounds_total: backgroundFiles.length
+        });
+      }
+      originalEndGame.apply(this, arguments);
+    };
+    
+    // Track URL clicks
+    document.addEventListener('DOMContentLoaded', function() {
+      document.querySelectorAll('a[href]').forEach(link => {
+        link.addEventListener('click', function() {
+          const url = this.getAttribute('href');
+          const playerId = getOrCreatePlayerId();
+          trackGameEvent('url_click', { 
+            url: url,
+            player_id: playerId
+          });
+        });
+      });
+      
+      // Initialize analytics on page load
+      document.addEventListener('click', function initOnce() {
+        initializeAnalytics();
+        document.removeEventListener('click', initOnce);
+      }, { once: true });
+      
+      // Add window unload handler to track session end
+      window.addEventListener('beforeunload', function() {
+        trackSessionEnd();
+        // Clear heartbeat interval
+        if (sessionHeartbeatInterval) {
+          clearInterval(sessionHeartbeatInterval);
+        }
+      });
+    });
+    
+    // Add scene transition tracking
+    const originalCheckBackgroundVisibility = checkBackgroundVisibility;
+    checkBackgroundVisibility = function() {
+      // Store previous background index
+      const previousBackgroundIndex = currentBackgroundIndex;
+      
+      // Call the original function
+      const result = originalCheckBackgroundVisibility.apply(this, arguments);
+      
+      // If the background changed, track the transition
+      if (previousBackgroundIndex !== currentBackgroundIndex) {
+        console.log(`Background transition: ${previousBackgroundIndex} -> ${currentBackgroundIndex}`);
+        trackSceneTransition(previousBackgroundIndex, currentBackgroundIndex);
+      }
+      
+      return result;
+    };
+    
+    // Test the connection immediately
+    (async function testSupabaseConnection() {
+      console.log("Testing Supabase connection...");
+      try {
+        const { data, error } = await supabaseClient
+          .from('leaderboard')
+          .select('count')
+          .limit(1);
+          
+        if (error) {
+          console.error("❌ Supabase connection test failed:", error);
+        } else {
+          console.log("✅ Supabase connection successful!");
+        }
+      } catch(e) {
+        console.error("❌ Supabase connection test exception:", e);
+      }
+    })();
+  </script>
+</body>
+</html>
