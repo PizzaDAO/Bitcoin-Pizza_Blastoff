@@ -1367,9 +1367,14 @@
       'zap2': 'Assets/Audio/zap 2.mp3',
       'zap3': 'Assets/Audio/zap 3.mp3',
       // Background music files with correct filenames
-      'menuMusic': 'Assets/Audio/background music_main menu.mp3',
-      'gameMusic': 'Assets/Audio/background music_gameplay.mp3',
-      'gameOverMusic': 'Assets/Audio/background music_game over.mp3'
+      'menuMusic': 'Assets/Audio/background_music_main_menu_pizza_shortie.mp3',
+      'gameMusic1': 'Assets/Audio/background music_gameplay 1_Damn I Eat Pizza Like A Gangster.mp3',
+      'gameMusic2': 'Assets/Audio/background music_gameplay 2_Pizza Mind.mp3',
+      'gameMusic3': 'Assets/Audio/background music_gameplay 3_Pizza Avenue.mp3',
+      'gameMusic4': 'Assets/Audio/background music_gameplay 4_Don\'t Worry Eat Pizza.mp3',
+      'gameMusic5': 'Assets/Audio/background music_gameplay 5_Working For The Pizza.mp3',
+      'gameOverMusic': 'Assets/Audio/backgroundmusic_game over.mp3',
+      'winningMusic': 'Assets/Audio/background music_ending winning screen_We Found Love.mp3'
     };
     
     // Function to log audio message - modified to not display visually
@@ -1456,7 +1461,7 @@
           if (gameOver) {
             playBackgroundMusic('gameOverMusic');
           } else if (gameActive) {
-            playBackgroundMusic('gameMusic');
+            playBackgroundMusic('gameMusic1');
           } else {
             playBackgroundMusic('menuMusic');
           }
@@ -1757,12 +1762,39 @@
       }
       
       // Check if the reduced hitboxes intersect
-      return (
+      const hasCollision = (
         aPosX - aWidthReduced / 2 < bPosX + bWidthReduced / 2 &&
         aPosX + aWidthReduced / 2 > bPosX - bWidthReduced / 2 &&
         aPosY - aHeightReduced / 2 < bPosY + bHeightReduced / 2 &&
         aPosY + aHeightReduced / 2 > bPosY - bHeightReduced / 2
       );
+      
+      // Debug info on collision detection
+      if (hasCollision) {
+        console.log("DETAILED COLLISION DATA:");
+        if (a === player) {
+          console.log("Player hitbox:", {
+            left: aPosX - aWidthReduced / 2,
+            right: aPosX + aWidthReduced / 2,
+            top: aPosY + aHeightReduced / 2,
+            bottom: aPosY - aHeightReduced / 2,
+            width: aWidthReduced,
+            height: aHeightReduced
+          });
+        }
+        if (b.type) {
+          console.log(`${b.type} hitbox:`, {
+            left: bPosX - bWidthReduced / 2,
+            right: bPosX + bWidthReduced / 2,
+            top: bPosY + bHeightReduced / 2,
+            bottom: bPosY - bHeightReduced / 2,
+            width: bWidthReduced,
+            height: bHeightReduced
+          });
+        }
+      }
+      
+      return hasCollision;
     }
     
     // Helper function to visualize hitboxes (for debugging)
@@ -1978,7 +2010,7 @@
         const bottomBoundary = -window.innerHeight / 2 + 20;
         if (playerContainer.position.y < bottomBoundary) {
           console.log("Hit bottom boundary");
-          endGame();
+          endGame(false, false, "bottom_boundary");
           return;
         }
         
@@ -1991,7 +2023,7 @@
         // Only die when the bottom edge of the player is above the top edge of the screen
         if (playerBottomEdge > screenTopEdge) {
           console.log("Completely beyond top boundary");
-          endGame();
+          endGame(false, false, "top_boundary");
           return;
         }
       }
@@ -2070,7 +2102,7 @@
         } else if (fullPowerMode && e.position.x < triggerX + 200) {
           // During full power, enemies are automatically destroyed when they get close
           createExplosion(e.position, 0xff3300);
-            scene.remove(e);
+          scene.remove(e);
           enemies.splice(i, 1);
           score += 20;
         } else if (e.position.x < triggerX && e.position.x > playerContainer.position.x && !fullPowerMode && !laserBonusActive) {
@@ -2106,10 +2138,14 @@
             enemies.splice(i, 1);
             score += 20;
           } else if (checkCollision(player, e)) {
-            endGame();
+            console.log("COLLISION DETECTED: Player hit enemy at position:", e.position.x, e.position.y);
+            console.log("Player position:", playerContainer.position.x, playerContainer.position.y);
+            endGame(false, false, "enemy_collision");
           }
         } else if (checkCollision(player, e)) {
-          endGame();
+          console.log("COLLISION DETECTED: Player hit enemy at position:", e.position.x, e.position.y);
+          console.log("Player position:", playerContainer.position.x, playerContainer.position.y);
+          endGame(false, false, "enemy_collision");
         }
       }
 
@@ -2158,7 +2194,10 @@
           obstacles.splice(i, 1);
           score += 20;
         } else if (checkCollision(player, o)) {
-          endGame();
+          console.log("COLLISION DETECTED: Player hit obstacle at position:", o.position.x, o.position.y);
+          console.log("Player position:", playerContainer.position.x, playerContainer.position.y);
+          console.log("Obstacle type:", o.type);
+          endGame(false, false, "obstacle_collision");
         }
       }
 
@@ -2255,18 +2294,37 @@
     });
 
     // Game over
-    function endGame(forceGameOver = false, isVictory = false) {
+    function endGame(forceGameOver = false, isVictory = false, reason = "unknown") {
+      console.log(`============ GAME OVER ============`);
+      console.log(`Reason: ${reason}`);
+      console.log(`Force game over: ${forceGameOver}`);
+      console.log(`Is victory: ${isVictory}`);
+      console.log(`Player position: (${playerContainer.position.x}, ${playerContainer.position.y})`);
+      console.log(`Retries remaining: ${retryCount}`);
+      console.log(`Current score: ${score}`);
+      console.log(`Current background: ${currentBackgroundIndex}`);
+      console.log(`Active enemies: ${enemies.length}`);
+      console.log(`Active obstacles: ${obstacles.length}`);
+      console.log(`Active collectibles: ${collectibles.length}`);
+      console.log(`==================================`);
+      
       if (retryCount > 0 && !forceGameOver) {
         // If we have retries and not forcing game over, use one and respawn
         respawnPlayer();
       } else {
         // No retries left or forcing game over, go to game over screen
-      gameOver = true;
+        gameOver = true;
         backgroundSpeed = 0.2; // Slow down background
         
-        // Switch music to game over theme
+        // Switch music based on victory or defeat
         stopBackgroundMusic();
-        playBackgroundMusic('gameOverMusic');
+        if (isVictory) {
+          // Play winning music for victory screen
+          playBackgroundMusic('winningMusic');
+        } else {
+          // Play regular game over music for defeat
+          playBackgroundMusic('gameOverMusic');
+        }
         
         // Show final score on game over screen
         const finalScore = Math.floor(score);
@@ -2278,6 +2336,22 @@
         // Store current score temporarily for the save function
         localStorage.setItem('tempScore', finalScore.toString());
         console.log("Stored temp score:", finalScore);
+        
+        // Record death reason in game stats if using analytics
+        try {
+          trackGameEvent('game_end_detailed', {
+            player_id: getOrCreatePlayerId(),
+            session_id: sessionStorage.getItem('current_session_id'),
+            score: finalScore,
+            death_reason: reason,
+            victory: isVictory,
+            player_position_x: playerContainer.position.x,
+            player_position_y: playerContainer.position.y,
+            background_index: currentBackgroundIndex
+          });
+        } catch (e) {
+          console.error("Error recording death stats:", e);
+        }
         
         // Show current leaderboard without adding new score yet
         displayLeaderboard();
@@ -2639,7 +2713,7 @@
       
       // Stop menu music and play gameplay music
       stopBackgroundMusic();
-      playBackgroundMusic('gameMusic');
+      playGameplayMusic();
       
       // Try to enable audio when game starts
       enableAudio();
@@ -3062,6 +3136,10 @@
     // Global array to track all music players
     const allMusicPlayers = [];
     
+    // Track which gameplay music is currently playing
+    let currentGameMusicTrack = 1;
+    const totalGameMusicTracks = 5; // Update this if you add/remove tracks
+    
     // Function to play background music for a specific screen
     function playBackgroundMusic(musicType) {
       console.log(`============= PLAYING ${musicType} =============`);
@@ -3079,38 +3157,62 @@
         return null;
       }
       
-      const musicPath = soundFiles[musicType];
+      // If the music type is "gameMusic", select from the available tracks
+      let actualMusicType = musicType;
+      if (musicType === 'gameMusic') {
+        actualMusicType = `gameMusic${currentGameMusicTrack}`;
+        console.log(`Selected gameplay music track ${currentGameMusicTrack} of ${totalGameMusicTracks}`);
+      }
+      
+      const musicPath = soundFiles[actualMusicType];
       if (!musicPath) {
-        console.error(`No path defined for music type: ${musicType}`);
+        console.error(`No path defined for music type: ${actualMusicType}`);
         return null;
       }
       
       try {
-        console.log(`Attempting to play ${musicType} from ${musicPath}`);
+        console.log(`Attempting to play ${actualMusicType} from ${musicPath}`);
         
         // Create a new audio element for the music
         currentMusic = new Audio(musicPath);
         currentMusic.volume = musicVolume;
-        currentMusic.loop = true; // Loop the background music
+        
+        // Only loop if it's not gameplay music
+        currentMusic.loop = !actualMusicType.startsWith('gameMusic');
         
         // Add event listeners for debugging
         currentMusic.addEventListener('play', () => {
-          console.log(`${musicType} started playing`);
+          console.log(`${actualMusicType} started playing`);
         });
         
         currentMusic.addEventListener('error', (e) => {
-          console.error(`Error with ${musicType}:`, e);
+          console.error(`Error with ${actualMusicType}:`, e);
         });
         
+        // For gameplay music, add ended event to switch to next track when the current one ends
+        if (actualMusicType.startsWith('gameMusic') && gameActive) {
+          currentMusic.addEventListener('ended', () => {
+            console.log(`${actualMusicType} ended, switching to next track`);
+            // Advance to the next track in sequence
+            currentGameMusicTrack = (currentGameMusicTrack % totalGameMusicTracks) + 1;
+            console.log(`Advancing to track: ${currentGameMusicTrack}`);
+            
+            // Only play the next track if the game is still active
+            if (gameActive && !gameOver) {
+              playGameplayMusic();
+            }
+          });
+        }
+        
         // Try to play
-        currentMusic.play()
+        const playPromise = currentMusic.play()
           .catch(e => {
             console.error("Play failed:", e);
           });
           
         return currentMusic;
       } catch(e) {
-        console.error(`Exception with ${musicType}: ${e.message}`);
+        console.error(`Exception with ${actualMusicType}: ${e.message}`);
         return null;
       }
     }
@@ -3186,7 +3288,7 @@
         retryButton.addEventListener('click', function(e) {
           e.stopPropagation();
           stopBackgroundMusic();
-          playBackgroundMusic('gameMusic');
+          playGameplayMusic();
           restartGame();
         });
       }
@@ -3237,9 +3339,15 @@
         muteButton.innerHTML = '🔊';
         // Resume music based on current game state
         if (gameOver) {
-          playBackgroundMusic('gameOverMusic');
+          // Check if we're on a victory screen
+          const isVictoryScreen = document.querySelector('#game-over img.victory') !== null;
+          if (isVictoryScreen) {
+            playBackgroundMusic('winningMusic');
+          } else {
+            playBackgroundMusic('gameOverMusic');
+          }
         } else if (gameActive) {
-          playBackgroundMusic('gameMusic');
+          playGameplayMusic();
         } else {
           playBackgroundMusic('menuMusic');
         }
@@ -3347,6 +3455,14 @@
       for (let i = 0; i < backgrounds.length; i++) {
         backgrounds[i].scale.set(backgroundWidth, backgroundHeight, 1);
       }
+    }
+
+    // Helper function for gameplay music selection
+    function playGameplayMusic() {
+      // Optionally randomize the starting track
+      // currentGameMusicTrack = Math.floor(Math.random() * totalGameMusicTracks) + 1;
+      
+      playBackgroundMusic('gameMusic');
     }
   </script>
 
