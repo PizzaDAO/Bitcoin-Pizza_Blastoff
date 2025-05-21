@@ -1794,6 +1794,23 @@
         }
       }
       
+      // NEW: Add more detailed collision logging for close calls
+      const distance = Math.sqrt(Math.pow(aPosX - bPosX, 2) + Math.pow(aPosY - bPosY, 2));
+      if (distance < 200) {
+        console.log(`CLOSE OBJECT: Distance ${Math.round(distance)}px between player and ${b.type || 'object'}`);
+        if (distance < 100) {
+          console.log(`VERY CLOSE: ${b.type || 'object'} at (${bPosX}, ${bPosY}), player at (${aPosX}, ${aPosY})`);
+          
+          // Calculate overlap on each axis
+          const overlapX = Math.min(aPosX + aWidthReduced/2, bPosX + bWidthReduced/2) - 
+                          Math.max(aPosX - aWidthReduced/2, bPosX - bWidthReduced/2);
+          const overlapY = Math.min(aPosY + aHeightReduced/2, bPosY + bHeightReduced/2) - 
+                          Math.max(aPosY - aHeightReduced/2, bPosY - bHeightReduced/2);
+                          
+          console.log(`Overlap: X=${overlapX.toFixed(2)}, Y=${overlapY.toFixed(2)}`);
+        }
+      }
+      
       return hasCollision;
     }
     
@@ -2010,8 +2027,12 @@
         const bottomBoundary = -window.innerHeight / 2 + 20;
         if (playerContainer.position.y < bottomBoundary) {
           console.log("Hit bottom boundary");
+          console.log(`Player Y: ${playerContainer.position.y}, Bottom boundary: ${bottomBoundary}`);
           endGame(false, false, "bottom_boundary");
           return;
+        } else if (playerContainer.position.y < bottomBoundary + 50) {
+          // NEW: Warning when getting close to bottom boundary
+          console.log(`WARNING: Close to bottom boundary! Player Y: ${playerContainer.position.y}, Bottom: ${bottomBoundary}`);
         }
         
         // Check top boundary - only trigger when completely off-screen
@@ -2023,8 +2044,12 @@
         // Only die when the bottom edge of the player is above the top edge of the screen
         if (playerBottomEdge > screenTopEdge) {
           console.log("Completely beyond top boundary");
+          console.log(`Player bottom edge: ${playerBottomEdge}, Screen top edge: ${screenTopEdge}`);
           endGame(false, false, "top_boundary");
           return;
+        } else if (playerBottomEdge > screenTopEdge - 50) {
+          // NEW: Warning when getting close to top boundary
+          console.log(`WARNING: Close to top boundary! Player bottom: ${playerBottomEdge}, Top: ${screenTopEdge}`);
         }
       }
 
@@ -2141,11 +2166,13 @@
             console.log("COLLISION DETECTED: Player hit enemy at position:", e.position.x, e.position.y);
             console.log("Player position:", playerContainer.position.x, playerContainer.position.y);
             endGame(false, false, "enemy_collision");
+            return; // Add explicit return to prevent further processing
           }
         } else if (checkCollision(player, e)) {
           console.log("COLLISION DETECTED: Player hit enemy at position:", e.position.x, e.position.y);
           console.log("Player position:", playerContainer.position.x, playerContainer.position.y);
           endGame(false, false, "enemy_collision");
+          return; // Add explicit return to prevent further processing
         }
       }
 
@@ -2198,6 +2225,7 @@
           console.log("Player position:", playerContainer.position.x, playerContainer.position.y);
           console.log("Obstacle type:", o.type);
           endGame(false, false, "obstacle_collision");
+          return; // Add explicit return to prevent further processing
         }
       }
 
@@ -2306,6 +2334,37 @@
       console.log(`Active enemies: ${enemies.length}`);
       console.log(`Active obstacles: ${obstacles.length}`);
       console.log(`Active collectibles: ${collectibles.length}`);
+      
+      // NEW: More detailed debug information
+      console.log(`DETAILED DEATH ANALYSIS:`);
+      console.log(`Player velocity: ${playerVelocity}`);
+      console.log(`Window height: ${window.innerHeight}`);
+      console.log(`Top boundary: ${window.innerHeight / 2}`);
+      console.log(`Bottom boundary: ${-window.innerHeight / 2 + 20}`);
+      
+      // List all nearby enemies
+      console.log(`Nearby enemies:`);
+      enemies.forEach((enemy, i) => {
+        const distance = Math.sqrt(
+          Math.pow(enemy.position.x - playerContainer.position.x, 2) +
+          Math.pow(enemy.position.y - playerContainer.position.y, 2)
+        );
+        if (distance < 300) {
+          console.log(`Enemy ${i}: position (${enemy.position.x}, ${enemy.position.y}), distance: ${distance}`);
+        }
+      });
+      
+      // List all nearby obstacles
+      console.log(`Nearby obstacles:`);
+      obstacles.forEach((obstacle, i) => {
+        const distance = Math.sqrt(
+          Math.pow(obstacle.position.x - playerContainer.position.x, 2) +
+          Math.pow(obstacle.position.y - playerContainer.position.y, 2)
+        );
+        if (distance < 300) {
+          console.log(`Obstacle ${i}: type ${obstacle.type}, position (${obstacle.position.x}, ${obstacle.position.y}), distance: ${distance}`);
+        }
+      });
       console.log(`==================================`);
       
       if (retryCount > 0 && !forceGameOver) {
