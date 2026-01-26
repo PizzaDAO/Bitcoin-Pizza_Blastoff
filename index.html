@@ -5497,17 +5497,22 @@
           console.error(`Error with ${actualMusicType}:`, e);
         });
         
-        // For gameplay music, add ended event to switch to next track when the current one ends
-        if (actualMusicType.startsWith('gameMusic') && gameActive) {
+        // For gameplay music, ALWAYS add ended event to switch to next track
+        if (actualMusicType.startsWith('gameMusic')) {
           currentMusic.addEventListener('ended', () => {
-            console.log(`${actualMusicType} ended, switching to next track`);
+            console.log(`${actualMusicType} ended, checking if should play next track...`);
+            console.log(`gameActive: ${gameActive}, gameOver: ${gameOver}, inCryptoWinter: ${inCryptoWinter}, musicEnabled: ${musicEnabled}`);
+            
             // Advance to the next track in sequence
             currentGameMusicTrack = (currentGameMusicTrack % totalGameMusicTracks) + 1;
             console.log(`Advancing to track: ${currentGameMusicTrack}`);
             
-            // Only play the next track if the game is still active
-            if (gameActive && !gameOver) {
+            // Only play the next track if the game is still active and not in ice level
+            if (gameActive && !gameOver && !inCryptoWinter && musicEnabled) {
+              console.log("Playing next gameplay music track...");
               playGameplayMusic();
+            } else {
+              console.log("Not playing next track - game state doesn't allow it");
             }
           });
         }
