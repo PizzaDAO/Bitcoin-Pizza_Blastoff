@@ -1015,8 +1015,7 @@
       
       video.play().catch(e => {
         console.log("Video play error (likely mobile autoplay blocked):", e);
-        // Show tap to continue immediately if video fails
-        showTapToContinue();
+        // Video failed but intro will auto-end via timeout
       });
       
       // Play audio (only if music is enabled)
@@ -1026,52 +1025,7 @@
         });
       }
       
-      // Create tap to continue function for mobile
-      function showTapToContinue() {
-        // Don't add duplicate
-        if (document.getElementById('tap-to-continue')) return;
-        
-        const tapMsg = document.createElement('div');
-        tapMsg.id = 'tap-to-continue';
-        tapMsg.innerHTML = 'TAP TO CONTINUE';
-        tapMsg.style.cssText = `
-          position: absolute;
-          bottom: 8%;
-          left: 50%;
-          transform: translateX(-50%);
-          color: #1a237e;
-          font-size: 28px;
-          font-weight: bold;
-          text-shadow: 1px 1px 2px white, -1px -1px 2px white;
-          z-index: 1000;
-          animation: pulse 1.5s infinite;
-          cursor: pointer;
-          background: rgba(255,255,255,0.85);
-          padding: 12px 24px;
-          border-radius: 8px;
-          border: 3px solid #1a237e;
-        `;
-        introOverlay.appendChild(tapMsg);
-        
-        // Add tap handler to skip intro
-        const skipIntro = () => {
-          tapMsg.remove();
-          introOverlay.removeEventListener('click', skipIntro);
-          introOverlay.removeEventListener('touchstart', skipIntro);
-          endCryptoWinterIntro();
-        };
-        introOverlay.addEventListener('click', skipIntro);
-        introOverlay.addEventListener('touchstart', skipIntro);
-      }
-      
-      // On mobile, show tap to continue after words appear (2 seconds)
-      if (isMobileDevice) {
-        setTimeout(() => {
-          if (cryptoWinterIntroPlaying) {
-            showTapToContinue();
-          }
-        }, 2000);
-      }
+      // Mobile auto-continues after a short delay (no tap needed)
       
       // Time the word appearances to sync with audio "Welcome to Crypto Winter"
       // Timings matched to spoken words in audio file
@@ -1117,13 +1071,10 @@
       console.log("=== CRYPTO WINTER INTRO COMPLETE ===");
       cryptoWinterIntroPlaying = false;
       
-      // Remove tap to continue message if present
-      const tapMsg = document.getElementById('tap-to-continue');
-      if (tapMsg) tapMsg.remove();
-      
       // Clear intro snow
       clearIntroSnow();
       inCryptoWinter = true;
+      cryptoWinterFirstTap = false; // Reset first tap tracking for slow-fall grace period
       cryptoWinterStartTime = Date.now(); // Start timer for progressive snow
       currentSnowIntensity = 0; // Reset snow intensity
       windStrength = 0.05; // Start with light wind
@@ -1700,6 +1651,7 @@
     let cryptoWinterIntroPlaying = false;
     let cryptoWinterAudio = null;
     let cryptoWinterWindAudio = null;
+    let cryptoWinterFirstTap = false; // Track if player has done first tap in ice level (for slow-fall grace period)
     
     // Snow particle system for Crypto Winter
     const snowParticles = [];
@@ -2765,10 +2717,14 @@
       const deltaFactor = deltaTime / targetFrameTime; // 1.0 at 60fps, 0.5 at 120fps, etc.
 
       // Update player with frame-rate independent physics
-      playerVelocity -= gravity * deltaFactor;
+      // Use reduced gravity in ice level until first tap (slow-fall grace period)
+      const effectiveGravity = (inCryptoWinter && !cryptoWinterFirstTap) ? gravity * 0.3 : gravity;
+      playerVelocity -= effectiveGravity * deltaFactor;
       // Cap fall speed at terminal velocity (prevents infinite acceleration)
-      if (playerVelocity < terminalVelocity) {
-        playerVelocity = terminalVelocity;
+      // Use slower terminal velocity during grace period too
+      const effectiveTerminalVelocity = (inCryptoWinter && !cryptoWinterFirstTap) ? terminalVelocity * 0.3 : terminalVelocity;
+      if (playerVelocity < effectiveTerminalVelocity) {
+        playerVelocity = effectiveTerminalVelocity;
       }
       playerContainer.position.y += playerVelocity * deltaFactor; // Update container position instead of sprite
       
@@ -3082,6 +3038,11 @@
       if (!gameActive) return;
       
       if (!gameOver) {
+        // Mark first tap in ice level (ends slow-fall grace period)
+        if (inCryptoWinter && !cryptoWinterFirstTap) {
+          cryptoWinterFirstTap = true;
+          console.log("Ice level: First tap - normal gravity activated");
+        }
         playerVelocity = flapStrength;
       } else {
         restartGame();
