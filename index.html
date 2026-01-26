@@ -276,6 +276,15 @@
       width: 85%;
       height: 85%;
       object-fit: contain;
+      pointer-events: none; /* Allow taps to pass through to overlay */
+    }
+    
+    /* Hide default video controls on webkit browsers */
+    #crypto-winter-intro video::-webkit-media-controls {
+      display: none !important;
+    }
+    #crypto-winter-intro video::-webkit-media-controls-enclosure {
+      display: none !important;
     }
     
     /* Full-width dark gradient at top for text contrast */
@@ -417,9 +426,10 @@
         max-height: 50px !important;
       }
       #crypto-winter-intro video {
-        width: 95%;
-        height: 55%;
-        top: 60%;
+        width: 90%;
+        height: 40%;
+        top: 55%;
+        pointer-events: none;
       }
       #crypto-winter-gradient {
         height: 320px;
@@ -615,7 +625,7 @@
 
   <!-- Crypto Winter Intro Overlay -->
   <div id="crypto-winter-intro">
-    <video id="crypto-winter-video" src="Assets/Visual/fear_greed.mp4" muted></video>
+    <video id="crypto-winter-video" src="Assets/Visual/fear_greed.mp4" muted playsinline webkit-playsinline></video>
     <div id="crypto-winter-gradient"></div>
     <div id="crypto-winter-words">
       <img src="Assets/Visual/welcome.png" alt="Welcome" id="word-welcome">
@@ -1026,16 +1036,20 @@
         tapMsg.innerHTML = 'TAP TO CONTINUE';
         tapMsg.style.cssText = `
           position: absolute;
-          bottom: 15%;
+          bottom: 8%;
           left: 50%;
           transform: translateX(-50%);
-          color: white;
-          font-size: 24px;
+          color: #1a237e;
+          font-size: 28px;
           font-weight: bold;
-          text-shadow: 2px 2px 4px black;
+          text-shadow: 1px 1px 2px white, -1px -1px 2px white;
           z-index: 1000;
           animation: pulse 1.5s infinite;
           cursor: pointer;
+          background: rgba(255,255,255,0.85);
+          padding: 12px 24px;
+          border-radius: 8px;
+          border: 3px solid #1a237e;
         `;
         introOverlay.appendChild(tapMsg);
         
