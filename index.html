@@ -678,9 +678,15 @@
     // Game variables
     let playerVelocity = 0;
     const gravity = 0.7;
+    const terminalVelocity = -18; // Maximum fall speed (prevents infinite acceleration)
     const desktopFlapStrength = 14;
     const mobileFlapStrength = 9; // Reduced flap strength for mobile devices
     let flapStrength = desktopFlapStrength; // Default to desktop value, will be updated based on device
+    
+    // Delta time for frame-rate independent physics
+    let lastFrameTime = 0;
+    const targetFPS = 60;
+    const targetFrameTime = 1000 / targetFPS; // ~16.67ms per frame at 60fps
     let retryCount = 0; // Changed from pizzaCount to retryCount
     let laserCount = 0;
     let score = 0;
@@ -975,12 +981,13 @@
       // Create intro snow effect
       createIntroSnow();
       
-      // Load and play audio
+      // Load and play audio (only if music is enabled)
       cryptoWinterAudio = new Audio('Assets/Audio/welcome_to_crypto_winter.mp3');
       cryptoWinterAudio.volume = 1.0;
       
       // When welcome audio ends, play the howling wind audio on loop
       cryptoWinterAudio.onended = () => {
+        if (!musicEnabled) return; // Don't play if muted
         console.log("Welcome audio ended, playing wind audio on loop...");
         cryptoWinterWindAudio = new Audio('Assets/Audio/howling_winter_wind__%231.mp3');
         cryptoWinterWindAudio.volume = 1.0;
@@ -994,8 +1001,10 @@
       video.currentTime = 0;
       video.play().catch(e => console.log("Video play error:", e));
       
-      // Play audio
-      cryptoWinterAudio.play().catch(e => console.log("Audio play error:", e));
+      // Play audio (only if music is enabled)
+      if (musicEnabled) {
+        cryptoWinterAudio.play().catch(e => console.log("Audio play error:", e));
+      }
       
       // Time the word appearances to sync with audio "Welcome to Crypto Winter"
       // Timings matched to spoken words in audio file
@@ -1124,6 +1133,7 @@
       
       // Resume game
       gameStartTime = performance.now(); // Reset start time for grace period
+      lastFrameTime = performance.now(); // Reset delta time to prevent huge first-frame jump
       if (!animationFrameId) {
         animationFrameId = requestAnimationFrame(animate);
       }
@@ -1978,6 +1988,12 @@
     
     // Super simple sound player - Audio folder only
     function playDirectSound(soundType) {
+      // Check if music/sound is enabled
+      if (!musicEnabled) {
+        logAudio(`Sound muted, skipping: ${soundType}`);
+        return;
+      }
+      
       const soundPath = soundFiles[soundType];
       if (!soundPath) {
         logAudio(`No path defined for sound type: ${soundType}`);
@@ -2663,15 +2679,25 @@
       
       if (gameStartTime === 0) {
         gameStartTime = time;
+        lastFrameTime = time;
         // Give initial upward velocity at start
         playerVelocity = flapStrength;
         // Set normal game speed for backgrounds
         backgroundSpeed = 2;
       }
 
-      // Update player
-      playerVelocity -= gravity;
-      playerContainer.position.y += playerVelocity; // Update container position instead of sprite
+      // Calculate delta time for frame-rate independent physics
+      const deltaTime = time - lastFrameTime;
+      lastFrameTime = time;
+      const deltaFactor = deltaTime / targetFrameTime; // 1.0 at 60fps, 0.5 at 120fps, etc.
+
+      // Update player with frame-rate independent physics
+      playerVelocity -= gravity * deltaFactor;
+      // Cap fall speed at terminal velocity (prevents infinite acceleration)
+      if (playerVelocity < terminalVelocity) {
+        playerVelocity = terminalVelocity;
+      }
+      playerContainer.position.y += playerVelocity * deltaFactor; // Update container position instead of sprite
       
       // Only check boundaries after a short grace period
       if (time - gameStartTime > 1000) {
@@ -2714,9 +2740,10 @@
         }
       }
 
-      // Update background with continuous scrolling
+      // Update background with continuous scrolling (frame-rate independent)
+      const adjustedSpeed = backgroundSpeed * deltaFactor;
       if (inCryptoWinter) {
-        updateCryptoWinterBackgrounds(backgroundSpeed);
+        updateCryptoWinterBackgrounds(adjustedSpeed);
         // Update snow particles and wind effects (only if green candle not showing)
         if (!greenCandleSprite) {
           updateSnowParticles();
@@ -2729,7 +2756,7 @@
           checkSunlightExit();
         }
       } else {
-        updateBackgrounds(backgroundSpeed);
+        updateBackgrounds(adjustedSpeed);
         updateForegroundBush(); // Update bush that hides Jaipur seam
         updateForegroundSnowpile(); // Update snowpile that hides Oslo left seam
         updateForegroundSnowpileRight(); // Update snowpile that hides Oslo right seam
@@ -3762,6 +3789,10 @@
       ensureBackgroundsVisible();
       backgroundSpeed = 2;
       
+      // Reset timing for clean delta time calculation
+      gameStartTime = 0;
+      lastFrameTime = 0;
+      
       updatePlayerTexture(); // Ensure correct player texture is set
       
       animationFrameId = requestAnimationFrame(animate);
@@ -4221,12 +4252,15 @@
       greenCandleAudio.volume = 0.8;
       greenCandleAudio.loop = false;
       
-      greenCandleAudio.play().then(() => {
-        console.log("Green candle audio playing (once)");
-      }).catch(e => {
-        console.log("Green candle audio error (continuing anyway):", e);
-        // Audio failed but we continue - the visual sequence still works
-      });
+      // Only play if music is enabled
+      if (musicEnabled) {
+        greenCandleAudio.play().then(() => {
+          console.log("Green candle audio playing (once)");
+        }).catch(e => {
+          console.log("Green candle audio error (continuing anyway):", e);
+          // Audio failed but we continue - the visual sequence still works
+        });
+      }
     }
     
     // Create bright sunlight EXIT at top of screen - player can fly into this to exit Crypto Winter
@@ -4580,6 +4614,8 @@
       
       // Restart game
       playBackgroundMusic('gameMusic1');
+      gameStartTime = 0; // Reset for grace period
+      lastFrameTime = 0; // Reset delta time
       if (animationFrameId) cancelAnimationFrame(animationFrameId);
       animationFrameId = requestAnimationFrame(animate);
       
@@ -5600,13 +5636,30 @@
             playBackgroundMusic('gameOverMusic');
           }
         } else if (gameActive) {
-          playGameplayMusic();
+          // Resume appropriate audio for ice level or regular gameplay
+          if (inCryptoWinter && cryptoWinterWindAudio) {
+            cryptoWinterWindAudio.play().catch(e => console.log("Wind audio resume error:", e));
+          } else if (inCryptoWinter && greenCandleAudio) {
+            greenCandleAudio.play().catch(e => console.log("Green candle audio resume error:", e));
+          } else {
+            playGameplayMusic();
+          }
         } else {
           playBackgroundMusic('menuMusic');
         }
       } else {
         muteButton.innerHTML = '🔇';
         stopBackgroundMusic();
+        // Also stop all ice level audio
+        if (cryptoWinterAudio) {
+          cryptoWinterAudio.pause();
+        }
+        if (cryptoWinterWindAudio) {
+          cryptoWinterWindAudio.pause();
+        }
+        if (greenCandleAudio) {
+          greenCandleAudio.pause();
+        }
       }
     });
     
