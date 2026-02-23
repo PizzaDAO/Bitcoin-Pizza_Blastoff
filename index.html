@@ -1124,10 +1124,10 @@
       
       introOverlay.style.display = 'none';
       
-      // Reset player position
+      // Reset player position - start near top so player gently falls during grace period
       const playerXPosition = getPlayerXPosition();
-      playerContainer.position.set(playerXPosition, 0, 0);
-      playerVelocity = flapStrength; // Give initial boost
+      playerContainer.position.set(playerXPosition, window.innerHeight * 0.15, 0);
+      playerVelocity = 0; // No initial boost - let player gently fall with reduced gravity
       
       // Clear ALL enemies, obstacles, and collectibles
       for (let i = enemies.length - 1; i >= 0; i--) {
