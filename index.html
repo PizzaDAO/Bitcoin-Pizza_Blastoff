@@ -5777,6 +5777,7 @@
     muteButton.style.cursor = 'pointer';
     
     muteButton.addEventListener('click', function() {
+      this.blur();
       musicEnabled = !musicEnabled;
       
       if (musicEnabled) {
