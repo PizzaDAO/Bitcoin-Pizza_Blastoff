@@ -2853,9 +2853,8 @@
           console.log("Hit bottom boundary");
           console.log(`Player Y: ${playerContainer.position.y}, Bottom boundary: ${bottomBoundary}`);
           
-          // Check if on Oslo level (index 8) OR first background (index 0 for testing) and not already in Crypto Winter - trigger hidden level!
-          // TODO: Remove index 0 check after testing
-          if ((currentBackgroundIndex === 8 || currentBackgroundIndex === 0) && !inCryptoWinter && !cryptoWinterIntroPlaying) {
+          // Check if on Oslo level (index 8) and not already in Crypto Winter - trigger hidden level!
+          if (currentBackgroundIndex === 8 && !inCryptoWinter && !cryptoWinterIntroPlaying) {
             console.log("HIDDEN LEVEL DISCOVERED: Falling through floor at background " + currentBackgroundIndex);
             startCryptoWinterIntro();
             return;
